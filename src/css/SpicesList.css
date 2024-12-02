@@ -295,13 +295,17 @@
     background: #fff;
     padding: 20px;
     border-radius: 10px;
-    width: 400px; /* 모달 창의 고정된 너비 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+    width: 400px;
+    min-height: 570px; /* 높이를 원하는 만큼 늘림 */
+    max-height: 80vh; /* 화면 높이의 90%를 넘지 않도록 제한 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     font-family: Arial, sans-serif;
     position: relative;
     text-align: left;
-    height: 500px;
+    overflow-y: auto; /* 내용이 넘치면 스크롤 */
 }
+
+
 
 .admin-spices-modal-container-delete {
     background: #fff;
@@ -364,6 +368,21 @@
 
 .admin-spices-url-input {
     translate: 155px;
+}
+
+.admin-spices-modal-row input,
+.admin-spices-modal-row textarea,
+.admin-spices-modal-row-description textarea {
+    width: 270px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+.admin-spices-modal-row-description textarea {
+    height: 100px;
+    resize: vertical;
 }
 
 /* 관리자 버튼 */

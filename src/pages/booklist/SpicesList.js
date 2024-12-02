@@ -3,14 +3,20 @@ import '../../css/SpicesList.css';
 import { Search, Trash2, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSpices, selectSpices, selectLoading } from '../../module/SpicesModule';
+import {
+    fetchSpices,
+    selectSpices,
+    selectLoading,
+    createSpiceAction,
+    modifySpiceAction,
+    deleteSpiceAction
+} from '../../module/SpicesModule';
 import LoadingScreen from '../../components/loading/LoadingScreen';
 
 function SpicesList() {
-
     const dispatch = useDispatch();
-    const spices = useSelector(selectSpices); // Redux 상태에서 데이터 가져오기
-    const loading = useSelector(selectLoading); // 로딩 상태 가져오기
+    const spices = useSelector(selectSpices);
+    const loading = useSelector(selectLoading);
     const navigate = useNavigate();
 
     const [activeFilters, setActiveFilters] = useState(new Set(['ALL']));
@@ -19,21 +25,21 @@ function SpicesList() {
     const [hoveredItemId, setHoveredItemId] = useState(null);
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectedItems, setSelectedItems] = useState(new Set());
-    const [isAdding, setIsAdding] = useState(false); // 추가 모달 상태
-    const [isDeleting, setIsDeleting] = useState(false); // 삭제 모달 상태
-    const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 모달 상태
-    const [selectedItem, setSelectedItem] = useState(null); // 삭제할 항목
+    const [isAdding, setIsAdding] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [selectedItem, setSelectedItem] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [role, setRole] = useState(null);
     const itemsPerPage = 12;
-    const pageLimit = 10
+    const pageLimit = 10;
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('auth'));
         if (storedUser && storedUser.role) {
-            setRole(storedUser.role); // 사용자 역할 저장
+            setRole(storedUser.role);
         }
     }, []);
 
@@ -69,7 +75,6 @@ function SpicesList() {
         return filter ? filter.color : '#EFEDED'; // 기본 색상은 회색
     };
 
-
     const toggleSelectMode = () => {
         setIsSelecting((prev) => {
             if (prev) {
@@ -94,43 +99,79 @@ function SpicesList() {
 
     const handleAddClick = () => setIsAdding(true);
     const handleAddClose = () => setIsAdding(false);
+
+    const handleSubmit = () => {
+        if (isAdding) {
+            // 새 항료 추가 로직
+            const newSpiceData = {
+                name: editingItem.name,
+                nameKr: editingItem.nameKr,
+                description: editingItem.description,
+                lineName: editingItem.line,
+                imageUrl: imagePreview
+            };
+
+            dispatch(createSpiceAction(newSpiceData))
+                .then(() => {
+                    setSuccessMessage('항료가 성공적으로 등록되었습니다!');
+                    setIsAdding(false);
+                    setImagePreview(null);
+                })
+                .catch((error) => {
+                    setSuccessMessage('항료 등록에 실패했습니다.');
+                });
+        }
+
+        if (isEditing) {
+            // 항료 수정 로직
+            const modifiedSpiceData = {
+                id: editingItem.id,
+                imageUrl: imagePreview || editingItem.imageUrl
+            };
+
+            dispatch(modifySpiceAction(modifiedSpiceData))
+                .then(() => {
+                    setSuccessMessage('항료가 성공적으로 수정되었습니다!');
+                    setIsEditing(false);
+                    setImagePreview(null);
+                })
+                .catch((error) => {
+                    setSuccessMessage('항료 수정에 실패했습니다.');
+                });
+        }
+
+        // 상태 초기화
+        setEditingItem(null);
+    };
+
     const handleDeleteClick = (item) => {
         setSelectedItem(item);
         setIsDeleting(true);
     };
-    const handleDeleteClose = () => setIsDeleting(false);
-
-    const handleSubmit = () => {
-        if (isAdding) {
-            // 추가 로직
-            setSuccessMessage('항료가 성공적으로 등록되었습니다!'); // 추가 성공 메시지
-            setIsAdding(false); // 추가 모달 닫기
-        }
-
-        if (isEditing) {
-            // 수정 로직
-            console.log("수정된 데이터:", editingItem); // 수정 데이터 확인
-            setSuccessMessage('항료가 성공적으로 수정되었습니다!'); // 수정 성공 메시지
-            setIsEditing(false); // 수정 모달 닫기
-        }
-
-        // 상태 초기화 (공통)
-        setEditingItem(null);
-    };
 
     const handleDeleteConfirm = () => {
-        setIsDeleting(false); // 삭제 모달 닫기
-        setSuccessMessage(`${selectedItem} 항료 카드가 삭제되었습니다!`); // 성공 메시지 설정
+        if (selectedItem) {
+            dispatch(deleteSpiceAction(selectedItem.id))
+                .then(() => {
+                    setSuccessMessage(`${selectedItem.name} 항료 카드가 삭제되었습니다!`);
+                    setIsDeleting(false);
+                })
+                .catch((error) => {
+                    setSuccessMessage('항료 삭제에 실패했습니다.');
+                });
+        }
+    };
+
+    const handleDeleteClose = () => setIsDeleting(false);
+
+    const handleEditClick = (item) => {
+        setEditingItem(item);
+        setIsEditing(true);
     };
 
     const handleEditClose = () => {
-        setIsEditing(false); // 수정 모달 닫기
-        setEditingItem(null); // 수정 데이터 초기화
-    };
-
-    const handleEditClick = (item) => {
-        setEditingItem(item); // 선택된 항목을 수정 상태로 설정
-        setIsEditing(true); // 수정 모달 열기
+        setIsEditing(false);
+        setEditingItem(null);
     };
 
     const handleSuccessClose = () => setSuccessMessage('');
@@ -189,17 +230,6 @@ function SpicesList() {
         return brightness > 128 ? '#000000' : '#FFFFFF';
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result); // 업로드된 이미지 미리보기 URL
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
     const handleReset = () => {
         setImagePreview(null); // 파일 선택 영역 초기화
     };
@@ -240,6 +270,10 @@ function SpicesList() {
                                     <input className='admin-spices-modal-row-name' type="text" placeholder="ex) Blood Orange" />
                                 </div>
                                 <div className="admin-spices-modal-row">
+                                    <label>한글명</label>
+                                    <input className='admin-spices-modal-row-name-kor' type="text" placeholder="ex) 블러드 오렌지" />
+                                </div>
+                                <div className="admin-spices-modal-row">
                                     <label>계열</label>
                                     <input className='admin-spices-modal-row-spices' type="text" placeholder="ex) spicy" />
                                 </div>
@@ -249,25 +283,47 @@ function SpicesList() {
                                 </div>
                                 <div className="admin-spices-modal-row">
                                     <label className='admin-spices-modal-row-image-label'>이미지</label>
-                                    <div
-                                        className="admin-spices-image-upload"
-                                        onClick={() => document.getElementById("file-input").click()}
-                                    >
-                                        {imagePreview ? (
-                                            <img
-                                                src={imagePreview}
-                                                alt="미리보기"
-                                                className="admin-spices-image-preview"
+                                    <div className="admin-spices-image-upload">
+                                        {editingItem?.isEditingImage ? (
+                                            <input
+                                                type="text"
+                                                className="admin-spices-url-input"
+                                                placeholder="새로운 이미지 URL 입력"
+                                                defaultValue={editingItem.imageUrl || ''}
+                                                onBlur={(e) =>
+                                                    setEditingItem((prev) => ({
+                                                        ...prev,
+                                                        imageUrl: e.target.value,
+                                                        isEditingImage: false,
+                                                    }))
+                                                }
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        setEditingItem((prev) => ({
+                                                            ...prev,
+                                                            imageUrl: e.target.value,
+                                                            isEditingImage: false,
+                                                        }));
+                                                    }
+                                                }}
                                             />
                                         ) : (
-                                            <div className="admin-spices-placeholder">+</div>
+                                            <div
+                                                onClick={() =>
+                                                    setEditingItem((prev) => ({ ...prev, isEditingImage: true }))
+                                                }
+                                            >
+                                                {editingItem?.imageUrl || imagePreview ? (
+                                                    <img
+                                                        src={editingItem.imageUrl || imagePreview}
+                                                        alt="미리보기"
+                                                        className="admin-spices-image-preview"
+                                                    />
+                                                ) : (
+                                                    <div className="admin-spices-placeholder">+</div>
+                                                )}
+                                            </div>
                                         )}
-                                        <input
-                                            id="file-input"
-                                            type="file"
-                                            className="admin-spices-file-input"
-                                            onChange={handleImageChange}
-                                        />
                                     </div>
                                 </div>
                             </div>
@@ -298,6 +354,18 @@ function SpicesList() {
                                             setEditingItem((prev) => ({ ...prev, name: e.target.value }))
                                         }
                                         placeholder="ex) Blood Orange"
+                                    />
+                                </div>
+                                <div className="admin-spices-modal-row">
+                                    <label>한글명</label>
+                                    <input
+                                        type="text"
+                                        className='admin-spices-modal-row-name-kor'
+                                        value={editingItem?.nameKor || ''}
+                                        onChange={(e) =>
+                                            setEditingItem((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder="ex) 블러드 오렌지"
                                     />
                                 </div>
                                 <div className="admin-spices-modal-row">
