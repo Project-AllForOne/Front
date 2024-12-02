@@ -1,31 +1,89 @@
 import '../../css/Chat.css';
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchChatResponse, selectChatMode, selectRecommendedPerfumes, selectResponse, selectLoading, selectError } from "../../module/ChatModule";
 
 function Chat() {
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const chatMode = useSelector(selectChatMode);
+    const [recommendedPerfumes, setRecommendedPerfumes] = useState([]);
+    const response = useSelector(selectResponse);
+    const loading = useSelector(selectLoading);
+    const error = useSelector(selectError);
 
     const [messages, setMessages] = useState([
         { sender: 'bot', text: '안녕하세요. 센티크입니다. 당신에게 어울리는 향을 찾아드리겠습니다.' }
     ]);
+
     const [input, setInput] = useState('');
+    const [selectedImages, setSelectedImages] = useState([]);
+    const messageEndRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [color, setColor] = useState('#D9D9D9');
     const [highlightedMessageIndexes, setHighlightedMessageIndexes] = useState([]);
     const [currentHighlightedIndex, setCurrentHighlightedIndex] = useState(null);
     const [isSearchMode, setIsSearchMode] = useState(false);
-    const [selectedImages, setSelectedImages] = useState([]);
     const [modalImage, setModalImage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const messageEndRef = useRef(null);
     const fileInputRef = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const colors = [
-        '#000000', '#56D2FF', '#62D66A', '#7ED3BB', '#86390F',
-        '#98D1FF', '#A1522C', '#C061FF', '#F8E4FF', '#FF5757',
-        '#FF7F43', '#FF7FC1', '#FFBD43', '#FFE043', '#FFE8D3',
-        '#FFFFFF'
+    const filters = [
+        { name: 'Spicy', color: '#FF5757' },
+        { name: 'Fruity', color: '#FFBD43' },
+        { name: 'Citrus', color: '#FFE043' },
+        { name: 'Green', color: '#62D66A' },
+        { name: 'Floral', color: '#FF80C1' },
+        { name: 'Oriental', color: '#C061FF' },
+        { name: 'Musk', color: '#F8E4FF' },
+        { name: 'Powdery', color: '#FFFFFF' },
+        { name: 'Tobacco Leather', color: '#000000' },
+        { name: 'Fougere', color: '#7ED3BB' },
+        { name: 'Gourmand', color: '#A1522C' },
+        { name: 'Woody', color: '#86390F' },
+        { name: 'Aldehyde', color: '#98D1FF' },
+        { name: 'Aquatic', color: '#56D2FF' },
+        { name: 'Amber', color: '#FFE8D3' },
     ];
+
+    // 특정 계열에 대한 색상 반환
+    const getColorForCategory = (lineOrFeeling) => {
+        const categories = lineOrFeeling.split(/[-/]/).map(c => c.trim());
+        const colors = categories
+            .map(c => {
+                const filter = filters.find(f => f.name.toLowerCase() === c.toLowerCase());
+                return filter ? filter.color : null;
+            })
+            .filter(Boolean);
+
+        if (colors.length === 1) return colors[0]; // 단일 계열
+        if (colors.length > 1) return `linear-gradient(90deg, ${colors.join(', ')})`; // 다중 계열
+        return '#D9D9D9'; // 기본 색상
+    };
+
+    // 향수 추천 데이터 처리
+    useEffect(() => {
+        if (chatMode === "recommendation") {
+            if (response?.commonFeeling) {
+                const newColor = getColorForCategory(response.commonFeeling);
+                setColor(newColor);
+            }
+
+            if (response?.recommendedPerfumes) {
+                // recommendedPerfumes가 배열인지 확인하고 변환
+                const recommendations = Array.isArray(response.recommendedPerfumes)
+                    ? response.recommendedPerfumes
+                    : response.recommendedPerfumes.recommendations || [];
+                setRecommendedPerfumes(recommendations);
+            }
+        } else if (chatMode === "chat") {
+            setColor('#D9D9D9'); // 일반 대화 기본 색상
+        }
+    }, [chatMode, recommendedPerfumes, response]);
 
     const isDarkColor = (color) => {
         const hex = color.replace("#", "");
@@ -35,13 +93,6 @@ function Chat() {
         const brightness = (r * 299 + g * 587 + b * 114) / 1000;
         return brightness < 128;
     };
-
-    useEffect(() => {
-        if (messageEndRef.current) {
-            messageEndRef.current.scrollIntoView({ behavior: "smooth" });
-        }
-    }, [messages, isLoading]);
-
 
     const handleSendMessage = () => {
         if (!input.trim() && selectedImages.length === 0) return;
@@ -57,129 +108,34 @@ function Chat() {
         setSelectedImages([]);
         setIsLoading(true); // 로딩 시작
 
-        // 향수 관련 질문인지 확인
-        const isPerfumeRelated = generateBotResponse(newMessage.text);
+        const imageFile = selectedImages.length > 0 ? selectedImages[0].file : null;
 
-        const responseDelay = isPerfumeRelated ? 5000 : 1000;
-        setTimeout(() => {
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            setColor(randomColor);
-
-            const botResponse = generateBotResponse(newMessage.text);
-
-            // 추천 리스트가 있으면 추천 메시지만 추가하고, 없으면 기본 텍스트 메시지 추가
-            const botMessage = Array.isArray(botResponse) && botResponse.length > 0
-                ? { sender: 'bot', recommendations: botResponse }
-                : { sender: 'bot', text: botResponse };
-
-            setMessages(prevMessages => [...prevMessages, botMessage]);
-            setIsLoading(false); // 로딩 종료
-        }, responseDelay);
+        dispatch(fetchChatResponse(input, imageFile))
+            .then((response) => {
+                console.log("API 응답 데이터:", response);
+                if (response.mode === "recommendation") {
+                    // 추천 메시지 처리
+                    const botMessage = {
+                        sender: 'bot',
+                        recommendations: response.payload.recommendedPerfumes,
+                    };
+                    setMessages((prevMessages) => [...prevMessages, botMessage]);
+                } else if (response.mode === "chat") {
+                    // 일반 메시지 처리
+                    const botMessage = {
+                        sender: 'bot',
+                        text: response.response,
+                    };
+                    setMessages((prevMessages) => [...prevMessages, botMessage]);
+                }
+            })
+            .catch((error) => {
+                console.error("Error handling chat response:", error);
+            })
+            .finally(() => {
+                setIsLoading(false); // 로딩 종료
+            });
     };
-
-
-    const generateBotResponse = (userInput) => {
-        const lowerInput = userInput.toLowerCase();
-
-        if (lowerInput.includes('달콤') || lowerInput.includes('스윗')) {
-            return [
-                {
-                    name: 'Dior Miss Dior',
-                    description: '플로럴과 과일 향의 조화로 따뜻하고 부드러운 느낌.',
-                },
-                {
-                    name: 'YSL Mon Paris',
-                    description: '베리 향과 머스크의 달콤함이 매력적인 향수.',
-                },
-                {
-                    name: 'Prada Candy',
-                    description: '캐러멜과 바닐라의 달콤함이 돋보이는 향수.',
-                }
-            ];
-        } else if (lowerInput.includes('상쾌') || lowerInput.includes('프레시')) {
-            return [
-                {
-                    name: 'Chanel Chance Eau Fraîche',
-                    description: '시트러스와 플로럴의 경쾌함이 특징.',
-                },
-                {
-                    name: 'Jo Malone English Pear & Freesia',
-                    description: '과일과 꽃 향이 어우러진 상쾌한 향수.',
-                },
-                {
-                    name: 'Acqua di Parma Blu Mediterraneo',
-                    description: '바다를 떠올리게 하는 시원한 시트러스 향.',
-                }
-            ];
-        } else if (lowerInput.includes('우디') || lowerInput.includes('나무')) {
-            return [
-                {
-                    name: 'Tom Ford Oud Wood',
-                    description: '깊고 매혹적인 나무 향의 대명사.',
-                },
-                {
-                    name: 'Le Labo Santal 33',
-                    description: '샌달우드와 머스크의 조화로 우아함을 더한 향수.',
-                },
-                {
-                    name: 'Byredo Super Cedar',
-                    description: '신선하고 부드러운 우디 향이 매력적입니다.',
-                }
-            ];
-        } else if (lowerInput.includes('플로럴') || lowerInput.includes('꽃')) {
-            return [
-                {
-                    name: 'Gucci Bloom',
-                    description: '풍성한 플로럴 향으로 여성스러움을 강조.',
-                },
-                {
-                    name: 'Marc Jacobs Daisy',
-                    description: '화사하고 상쾌한 꽃 향의 조화.',
-                },
-                {
-                    name: 'Chloe Eau de Parfum',
-                    description: '장미와 머스크의 부드러운 플로럴 향수.',
-                }
-            ];
-        } else if (lowerInput.includes('시트러스') || lowerInput.includes('레몬')) {
-            return [
-                {
-                    name: 'Jo Malone Lime Basil & Mandarin',
-                    description: '밝고 상쾌한 시트러스 향.',
-                },
-                {
-                    name: 'Atelier Cologne Orange Sanguine',
-                    description: '신선한 오렌지와 시트러스의 조화.',
-                },
-                {
-                    name: 'Dior Sauvage',
-                    description: '강렬한 시트러스와 우디의 독특한 조화.',
-                }
-            ];
-        } else if (lowerInput.includes('따뜻') || lowerInput.includes('웜')) {
-            return [
-                {
-                    name: 'Yves Saint Laurent Black Opium',
-                    description: '따뜻한 바닐라와 커피 향이 매력적.',
-                },
-                {
-                    name: 'Maison Margiela Replica By the Fireplace',
-                    description: '따뜻한 나무와 마시멜로 향의 조화.',
-                },
-                {
-                    name: 'Tom Ford Tobacco Vanille',
-                    description: '바닐라와 담배 잎의 깊고 따뜻한 향수.',
-                }
-            ];
-        } else if (lowerInput.includes('안녕') || lowerInput.includes('헬로')) {
-            return '안녕하세요! 무엇을 도와드릴까요?';
-        } else if (lowerInput.includes('고마워') || lowerInput.includes('감사')) {
-            return '천만에요! 더 궁금한 게 있으신가요?';
-        } else {
-            return '죄송합니다, 질문에 대한 답변을 준비 중입니다. "달콤한", "플로럴" 등을 입력해 주세요.';
-        }
-    };
-
 
     const handlePaste = (event) => {
         const items = event.clipboardData.items;
@@ -215,14 +171,15 @@ function Chat() {
     };
 
     const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newImages = files.map(file => ({
-            url: URL.createObjectURL(file),
-            file: file
-        }));
-
-        setSelectedImages(prevImages => [...prevImages, ...newImages]);
-        e.target.value = '';
+        const file = e.target.files[0]; // 첫 번째 파일만 가져옴
+        if (file) {
+            const newImage = {
+                url: URL.createObjectURL(file),
+                file: file
+            };
+            setSelectedImages([newImage]); // 새 이미지를 기존 이미지 대신 대체
+        }
+        e.target.value = ''; // 파일 입력 초기화
     };
 
     const handleRemoveImage = (index) => {
@@ -325,16 +282,30 @@ function Chat() {
         };
     }, [currentHighlightedIndex, highlightedMessageIndexes]);
 
+    useEffect(() => {
+        console.log("Chat Mode has changed:", chatMode);
+    }, [chatMode]);
+
     const toggleSearchMode = () => {
         setIsSearchMode((prevMode) => !prevMode);
     };
-
-    const navigate = useNavigate();
 
     const handleGoBack = () => {
         navigate(-1); // 이전 페이지로 이동
     };
 
+    const RecommendationCard = ({ perfume }) => (
+        <div className="chat-recommendation-card">
+            <img src={perfume.imageUrl || '/images/default-perfume.png'} alt={perfume.name} className="chat-recommendation-image" />
+            <div className="chat-recommendation-content">
+                <p className="chat-recommendation-name"><strong>이름:</strong> {perfume.name}</p>
+                <p className="chat-recommendation-line"><strong>계열:</strong> {perfume.line}</p>
+                <p className="chat-recommendation-brand"><strong>브랜드:</strong> {perfume.brand}</p>
+                <p className="chat-recommendation-reason"><strong>추천 이유:</strong> {perfume.reason}</p>
+                <p className="chat-recommendation-situation"><strong>추천 상황:</strong> {perfume.situation}</p>
+            </div>
+        </div>
+    );
 
     return (
         <div className="chat-container-wrapper">
@@ -378,64 +349,85 @@ function Chat() {
 
                 <div className="chat-message-box" style={{ '--scroll-color': color }}>
                     <div className="chat-messages-container">
-                        {isSearchMode
-                            ? highlightedMessageIndexes.map((index) => (
+                        {/* 검색 모드일 경우 */}
+                        {isSearchMode && highlightedMessageIndexes.length > 0 ? (
+                            highlightedMessageIndexes.map((index) => (
                                 <div key={index} className="chat-search-result">
-                                    <p className="chat-search-result-text" dangerouslySetInnerHTML={{ __html: highlightSearch(messages[index].text, searchInput) }}></p>
+                                    <p
+                                        className="chat-search-result-text"
+                                        dangerouslySetInnerHTML={{
+                                            __html: highlightSearch(messages[index].text, searchInput),
+                                        }}
+                                    ></p>
                                 </div>
                             ))
-                            : messages.map((msg, index) => (
-                                <div
-                                    key={index}
-                                    id={`message-${index}`}
-                                    className={`chat-message ${msg.sender === 'bot' ? 'chat-bot-message' : 'chat-user-message'} ${highlightedMessageIndexes.includes(index) && index === currentHighlightedIndex ? 'highlighted' : ''}`}
-                                >
-                                    {msg.sender === 'bot' ? (
-                                        Array.isArray(msg.recommendations) && msg.recommendations.length > 0 ? (
-                                            // 추천 리스트가 있을 경우 카드 형식으로 렌더링
-                                            <div className="chat-recommendations-container">
-                                                <img src="/images/logo-bot.png" alt="Bot Avatar" className="chat-avatar" />
-                                                <div className="chat-recommendations-wrapper">
-                                                    {msg.recommendations.map((item, idx) => (
-                                                        <div key={idx} className="chat-recommendation-card">
-                                                            <p className="chat-recommendation-name">{item.name}</p>
-                                                            <p className="chat-recommendation-description">{item.description}</p>
+                        ) : (
+                            // 추천 모드 또는 일반 채팅 모드 렌더링
+                            <>
+                                {chatMode === "recommendation" ? (
+                                    // 추천 리스트를 표시
+                                    recommendedPerfumes.map((perfume, index) => (
+                                        <RecommendationCard key={index} perfume={perfume} />
+                                    ))
+                                ) : (
+                                    // 일반 메시지 렌더링
+                                    messages.map((msg, index) => (
+                                        <div
+                                            key={index}
+                                            id={`message-${index}`}
+                                            className={`chat-message ${msg.sender === 'bot' ? 'chat-bot-message' : 'chat-user-message'
+                                                } ${highlightedMessageIndexes.includes(index) &&
+                                                    index === currentHighlightedIndex
+                                                    ? 'highlighted'
+                                                    : ''
+                                                }`}
+                                        >
+                                            {msg.sender === 'bot' ? (
+                                                Array.isArray(msg.recommendations) && msg.recommendations.length > 0 ? (
+                                                    // 추천 리스트가 있을 경우 카드 형식으로 렌더링
+                                                    <div className="chat-recommendations-container">
+                                                        <img src="/images/logo-bot.png" alt="Bot Avatar" className="chat-avatar" />
+                                                        <div className="chat-recommendations-wrapper">
+                                                            {msg.recommendations.map((item, idx) => (
+                                                                <RecommendationCard key={idx} perfume={item} />
+                                                            ))}
                                                         </div>
+                                                        <div className={`chat-color-bar ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <img src="/images/logo-bot.png" alt="Bot Avatar" className="chat-avatar" />
+                                                        <div className="chat-message-text-wrapper">
+                                                            <p
+                                                                className="chat-message-text"
+                                                                dangerouslySetInnerHTML={{ __html: highlightSearch(msg.text, searchInput) }}
+                                                            ></p>
+                                                            <div className={`chat-color-bar ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
+                                                        </div>
+                                                    </>
+                                                )
+                                            ) : (
+                                                // 사용자 메시지 렌더링
+                                                <div className="chat-message-text-wrapper chat-user-message-wrapper">
+                                                    {msg.text && (
+                                                        <p
+                                                            className="chat-message-text"
+                                                            dangerouslySetInnerHTML={{ __html: highlightSearch(msg.text, searchInput) }}
+                                                        ></p>
+                                                    )}
+                                                    {msg.images && msg.images.map((image, idx) => (
+                                                        <img key={idx} src={image} alt="Uploaded" className="chat-uploaded-image" onClick={() => openModal(image)} />
                                                     ))}
+                                                    <div className={`chat-color-circle ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
                                                 </div>
-                                                <div className={`chat-color-bar ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <img src="/images/logo-bot.png" alt="Bot Avatar" className="chat-avatar" />
-                                                <div className="chat-message-text-wrapper">
-                                                    <p
-                                                        className="chat-message-text"
-                                                        dangerouslySetInnerHTML={{ __html: highlightSearch(msg.text, searchInput) }}
-                                                    ></p>
-                                                    <div className={`chat-color-bar ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
-                                                </div>
-                                            </>
-                                        )
-                                    ) : (
-                                        // 사용자 메시지 렌더링
-                                        <div className="chat-message-text-wrapper chat-user-message-wrapper">
-                                            {msg.text && (
-                                                <p
-                                                    className="chat-message-text"
-                                                    dangerouslySetInnerHTML={{ __html: highlightSearch(msg.text, searchInput) }}
-                                                ></p>
                                             )}
-                                            {msg.images && msg.images.map((image, idx) => (
-                                                <img key={idx} src={image} alt="Uploaded" className="chat-uploaded-image" onClick={() => openModal(image)} />
-                                            ))}
-                                            <div className={`chat-color-circle ${color === '#FFFFFF' ? 'highlighted-border' : ''}`} style={{ backgroundColor: color }}></div>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+                                    ))
+                                )}
+                            </>
+                        )}
                         {/* 로딩 중일 때 로딩 메시지 표시 */}
-                        {isLoading && (
+                        {loading && (
                             <div className="chat-message chat-bot-message">
                                 <img src="/images/logo-bot.png" alt="Bot Avatar" className="chat-avatar" />
                                 <div className="chat-message-text-wrapper">
@@ -472,7 +464,6 @@ function Chat() {
                                 id="file-upload"
                                 type="file"
                                 accept="image/*"
-                                multiple
                                 onChange={handleImageUpload}
                                 ref={fileInputRef}
                                 style={{ display: 'none' }}

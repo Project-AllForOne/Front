@@ -4,6 +4,7 @@ import authReducer from "./module/AuthModule";
 import memberReducer from "./module/MemberModule";
 import spiceReducer from "./module/SpicesModule";
 import perfumeReducer from "./module/PerfumeModule";
+import chatReducer from "./module/ChatModule";
 
 // 여러 리듀서를 합치는 경우
 const rootReducer = combineReducers({
@@ -11,6 +12,8 @@ const rootReducer = combineReducers({
     members: memberReducer,
     spices: spiceReducer,
     perfumes: perfumeReducer,
+    chat: chatReducer,
+
 });
 
 // 스토어 생성
