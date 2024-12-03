@@ -380,6 +380,17 @@
     margin-left: 10px;
 }
 
+.admin-spices-modal-row-spices {
+    width: 280px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    background-color: #EFEDED;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+
+
 .admin-spices-modal-row-description textarea {
     height: 100px;
     resize: vertical;

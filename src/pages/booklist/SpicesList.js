@@ -5,11 +5,11 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchSpices,
+    addSpice,
+    updateSpice,
+    removeSpice,
     selectSpices,
-    selectLoading,
-    createSpiceAction,
-    modifySpiceAction,
-    deleteSpiceAction
+    selectLoading
 } from '../../module/SpicesModule';
 import LoadingScreen from '../../components/loading/LoadingScreen';
 
@@ -72,16 +72,15 @@ function SpicesList() {
 
     const getFilterColor = (lineName) => {
         const filter = filters.find((filter) => filter.name === lineName);
-        return filter ? filter.color : '#EFEDED'; // 기본 색상은 회색
+        return filter ? filter.color : '#EFEDED';
     };
 
     const toggleSelectMode = () => {
         setIsSelecting((prev) => {
             if (prev) {
-                // 선택 모드를 종료할 때 선택 항목 초기화
                 setSelectedItems(new Set());
             }
-            return !prev; // 선택 모드 토글
+            return !prev;
         });
     };
 
@@ -89,9 +88,9 @@ function SpicesList() {
         setSelectedItems((prevSelected) => {
             const newSelected = new Set(prevSelected);
             if (newSelected.has(itemId)) {
-                newSelected.delete(itemId); // 선택 해제
+                newSelected.delete(itemId);
             } else {
-                newSelected.add(itemId); // 선택
+                newSelected.add(itemId);
             }
             return newSelected;
         });
@@ -100,78 +99,44 @@ function SpicesList() {
     const handleAddClick = () => setIsAdding(true);
     const handleAddClose = () => setIsAdding(false);
 
-    const handleSubmit = () => {
-        if (isAdding) {
-            // 새 항료 추가 로직
-            const newSpiceData = {
-                name: editingItem.name,
-                nameKr: editingItem.nameKr,
-                description: editingItem.description,
-                lineName: editingItem.line,
-                imageUrl: imagePreview
-            };
-
-            dispatch(createSpiceAction(newSpiceData))
-                .then(() => {
-                    setSuccessMessage('항료가 성공적으로 등록되었습니다!');
-                    setIsAdding(false);
-                    setImagePreview(null);
-                })
-                .catch((error) => {
-                    setSuccessMessage('항료 등록에 실패했습니다.');
-                });
-        }
-
-        if (isEditing) {
-            // 항료 수정 로직
-            const modifiedSpiceData = {
-                id: editingItem.id,
-                imageUrl: imagePreview || editingItem.imageUrl
-            };
-
-            dispatch(modifySpiceAction(modifiedSpiceData))
-                .then(() => {
-                    setSuccessMessage('항료가 성공적으로 수정되었습니다!');
-                    setIsEditing(false);
-                    setImagePreview(null);
-                })
-                .catch((error) => {
-                    setSuccessMessage('항료 수정에 실패했습니다.');
-                });
-        }
-
-        // 상태 초기화
-        setEditingItem(null);
-    };
-
     const handleDeleteClick = (item) => {
         setSelectedItem(item);
         setIsDeleting(true);
     };
+    const handleDeleteClose = () => setIsDeleting(false);
+
+    const handleSubmit = () => {
+        if (isAdding) {
+            dispatch(addSpice(editingItem));
+            setSuccessMessage('항료가 성공적으로 등록되었습니다!');
+            setIsAdding(false);
+        }
+
+        if (isEditing) {
+            dispatch(updateSpice(editingItem));
+            setSuccessMessage('항료가 성공적으로 수정되었습니다!');
+            setIsEditing(false);
+        }
+
+        setEditingItem(null);
+    };
 
     const handleDeleteConfirm = () => {
         if (selectedItem) {
-            dispatch(deleteSpiceAction(selectedItem.id))
-                .then(() => {
-                    setSuccessMessage(`${selectedItem.name} 항료 카드가 삭제되었습니다!`);
-                    setIsDeleting(false);
-                })
-                .catch((error) => {
-                    setSuccessMessage('항료 삭제에 실패했습니다.');
-                });
+            dispatch(removeSpice(selectedItem.id));
+            setIsDeleting(false);
+            setSuccessMessage(`${selectedItem.name} 항료 카드가 삭제되었습니다!`);
         }
-    };
-
-    const handleDeleteClose = () => setIsDeleting(false);
-
-    const handleEditClick = (item) => {
-        setEditingItem(item);
-        setIsEditing(true);
     };
 
     const handleEditClose = () => {
         setIsEditing(false);
         setEditingItem(null);
+    };
+
+    const handleEditClick = (item) => {
+        setEditingItem(item);
+        setIsEditing(true);
     };
 
     const handleSuccessClose = () => setSuccessMessage('');
@@ -230,8 +195,19 @@ function SpicesList() {
         return brightness > 128 ? '#000000' : '#FFFFFF';
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleReset = () => {
-        setImagePreview(null); // 파일 선택 영역 초기화
+        setImagePreview(null);
     };
 
     return (
@@ -270,19 +246,36 @@ function SpicesList() {
                                     <input className='admin-spices-modal-row-name' type="text" placeholder="ex) Blood Orange" />
                                 </div>
                                 <div className="admin-spices-modal-row">
-                                    <label>한글명</label>
-                                    <input className='admin-spices-modal-row-name-kor' type="text" placeholder="ex) 블러드 오렌지" />
+                                    <label>향료명(한글)</label>
+                                    <input className='admin-spices-modal-row-name-kr' type="text" placeholder="ex) 블러드 오렌지" />
                                 </div>
                                 <div className="admin-spices-modal-row">
                                     <label>계열</label>
-                                    <input className='admin-spices-modal-row-spices' type="text" placeholder="ex) spicy" />
+                                    <select className='admin-spices-modal-row-spices'>
+                                        <option value="">계열을 선택하세요</option>
+                                        <option value="Spicy">Spicy</option>
+                                        <option value="Fruity">Fruity</option>
+                                        <option value="Citrus">Citrus</option>
+                                        <option value="Green">Green</option>
+                                        <option value="Aldehyde">Aldehyde</option>
+                                        <option value="Aquatic">Aquatic</option>
+                                        <option value="Fougere">Fougere</option>
+                                        <option value="Gourmand">Gourmand</option>
+                                        <option value="Woody">Woody</option>
+                                        <option value="Oriental">Oriental</option>
+                                        <option value="Floral">Floral</option>
+                                        <option value="Musk">Musk</option>
+                                        <option value="Powdery">Powdery</option>
+                                        <option value="Amber">Amber</option>
+                                        <option value="Tobacco Leather">Tobacco Leather</option>
+                                    </select>
                                 </div>
                                 <div className="admin-spices-modal-row-description">
                                     <label>향료 설명</label>
                                     <textarea placeholder="ex) 달콤한 오렌지의..." />
                                 </div>
                                 <div className="admin-spices-modal-row">
-                                    <label className='admin-spices-modal-row-image-label'>이미지</label>
+                                    <label className="admin-spices-modal-row-image-label">이미지</label>
                                     <div className="admin-spices-image-upload">
                                         {editingItem?.isEditingImage ? (
                                             <input
@@ -357,28 +350,43 @@ function SpicesList() {
                                     />
                                 </div>
                                 <div className="admin-spices-modal-row">
-                                    <label>한글명</label>
+                                    <label>향료명(한글)</label>
                                     <input
                                         type="text"
-                                        className='admin-spices-modal-row-name-kor'
-                                        value={editingItem?.nameKor || ''}
+                                        className='admin-spices-modal-row-name-kr'
+                                        value={editingItem?.nameKr || ''}
                                         onChange={(e) =>
                                             setEditingItem((prev) => ({ ...prev, name: e.target.value }))
                                         }
-                                        placeholder="ex) 블러드 오렌지"
+                                        placeholder="ex) Blood Orange"
                                     />
                                 </div>
                                 <div className="admin-spices-modal-row">
                                     <label>계열</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         className='admin-spices-modal-row-spices'
                                         value={editingItem?.line || ''}
                                         onChange={(e) =>
                                             setEditingItem((prev) => ({ ...prev, line: e.target.value }))
                                         }
-                                        placeholder="ex) Citrus 계열"
-                                    />
+                                    >
+                                        <option value="">계열을 선택하세요</option>
+                                        <option value="Spicy">Spicy</option>
+                                        <option value="Fruity">Fruity</option>
+                                        <option value="Citrus">Citrus</option>
+                                        <option value="Green">Green</option>
+                                        <option value="Aldehyde">Aldehyde</option>
+                                        <option value="Aquatic">Aquatic</option>
+                                        <option value="Fougere">Fougere</option>
+                                        <option value="Gourmand">Gourmand</option>
+                                        <option value="Woody">Woody</option>
+                                        <option value="Oriental">Oriental</option>
+                                        <option value="Floral">Floral</option>
+                                        <option value="Musk">Musk</option>
+                                        <option value="Powdery">Powdery</option>
+                                        <option value="Amber">Amber</option>
+                                        <option value="Tobacco Leather">Tobacco Leather</option>
+                                    </select>
                                 </div>
                                 <div className="admin-spices-modal-row-description">
                                     <label>향료 설명</label>
@@ -393,7 +401,6 @@ function SpicesList() {
                                 <div className="admin-spices-modal-row">
                                     <label className="admin-spices-modal-row-image-label">이미지</label>
                                     <div className="admin-spices-image-upload">
-                                        {/* URL 입력 필드 */}
                                         {editingItem?.isEditingImage ? (
                                             <input
                                                 type="text"
@@ -435,7 +442,6 @@ function SpicesList() {
                                             </div>
                                         )}
                                     </div>
-
                                 </div>
                             </div>
                             <div className="admin-spices-modal-actions">

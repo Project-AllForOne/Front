@@ -14,7 +14,7 @@ export const getAllSpices = async () => {
 export const createSpice = async (spiceData) => {
     try {
         const response = await apis.post("/spices", spiceData);
-        console.log("Spice created successfully:", response.data);
+        console.log("Create Response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error creating spice:", error);
@@ -24,8 +24,8 @@ export const createSpice = async (spiceData) => {
 
 export const modifySpice = async (spiceData) => {
     try {
-        const response = await apis.put(`/spices/${spiceData.id}`, spiceData);
-        console.log("Spice modified successfully:", response.data);
+        const response = await apis.put("/spices", spiceData);
+        console.log("Modify Response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error modifying spice:", error);
@@ -35,8 +35,8 @@ export const modifySpice = async (spiceData) => {
 
 export const deleteSpice = async (spiceId) => {
     try {
-        const response = await apis.delete(`/spices/${spiceId}`);
-        console.log("Spice deleted successfully:", response.data);
+        const response = await apis.delete("/{spiceid}", { data: spiceId });
+        console.log("Delete Response:", response.data);
         return response.data;
     } catch (error) {
         console.error("Error deleting spice:", error);
