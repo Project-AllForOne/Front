@@ -32,7 +32,7 @@ function SpicesList() {
     const [selectedItem, setSelectedItem] = useState(null); // 삭제할 항목
     const [imagePreview, setImagePreview] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
+    const [selectedSpice, setSelectedSpice] = useState(null);
     const [role, setRole] = useState(null);
     const itemsPerPage = 12;
     const pageLimit = 10
@@ -111,35 +111,53 @@ function SpicesList() {
 
     const handleSubmit = () => {
         if (isAdding) {
-            dispatch(createSpices(editingItem));
-            setSuccessMessage('항료가 성공적으로 등록되었습니다!');
+            const newSpice = {
+                name: selectedSpice?.name || '', // DTO의 `name` 필드에 매핑
+                nameKr: selectedSpice?.nameKr || '', // DTO의 `nameKr` 필드에 매핑
+                description: selectedSpice?.description || '', // DTO의 `description` 필드에 매핑
+                imageUrl: selectedSpice?.imageUrl || '', // DTO의 `imageUrl` 필드에 매핑
+                lineName: selectedSpice?.lineName || '', // DTO의 `lineName` 필드에 매핑
+            };
+
+            dispatch(createSpices(newSpice));
+            setSuccessMessage('향료가 성공적으로 등록되었습니다!');
             setIsAdding(false);
         }
 
         if (isEditing) {
-            dispatch(modifySpices(editingItem));
-            setSuccessMessage('항료가 성공적으로 수정되었습니다!');
+            const updatedSpice = {
+                id: selectedSpice?.id || null, // DTO의 `id` 필드에 매핑
+                name: selectedSpice?.name || '',
+                nameKr: selectedSpice?.nameKr || '',
+                description: selectedSpice?.description || '',
+                imageUrl: selectedSpice?.imageUrl || '',
+                lineName: selectedSpice?.line || '',
+            };
+
+            dispatch(modifySpices(updatedSpice));
+            setSuccessMessage('향료가 성공적으로 수정되었습니다!');
             setIsEditing(false);
         }
 
-        setEditingItem(null);
+        setSelectedSpice(null);
     };
 
     const handleDeleteConfirm = () => {
         if (selectedItem) {
-            dispatch(deleteSpices(selectedItem.id));
+            dispatch(deleteSpices(selectedItem.id)); // 엔티티의 `id`를 전달
             setIsDeleting(false);
             setSuccessMessage(`${selectedItem.name} 항료 카드가 삭제되었습니다!`);
         }
     };
 
+
     const handleEditClose = () => {
         setIsEditing(false);
-        setEditingItem(null);
+        setSelectedSpice(null);
     };
 
     const handleEditClick = (item) => {
-        setEditingItem(item);
+        setSelectedSpice(item);
         setIsEditing(true);
     };
 
@@ -234,17 +252,44 @@ function SpicesList() {
                         <div className="admin-spices-modal-container">
                             <h2 className="admin-spices-modal-title">향료 카드 추가하기</h2>
                             <div className="admin-spices-modal-content">
+                                {/* 향료명 입력 */}
                                 <div className="admin-spices-modal-row">
-                                    <label>향료명</label>
-                                    <input className='admin-spices-modal-row-name' type="text" placeholder="ex) Blood Orange" />
+                                    <label className="spices-form-label">향료명</label>
+                                    <input
+                                        className="admin-spices-modal-row-name"
+                                        type="text"
+                                        value={selectedSpice?.name || ""}
+                                        onChange={(e) =>
+                                            setSelectedSpice((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder="ex) Blood Orange"
+                                        required
+                                    />
                                 </div>
+                                {/* 향료명(한글) 입력 */}
                                 <div className="admin-spices-modal-row">
-                                    <label>향료명(한글)</label>
-                                    <input className='admin-spices-modal-row-name-kr' type="text" placeholder="ex) 블러드 오렌지" />
+                                    <label className="spices-form-label">향료명(한글)</label>
+                                    <input
+                                        className="admin-spices-modal-row-name-kr"
+                                        type="text"
+                                        value={selectedSpice?.nameKr || ""}
+                                        onChange={(e) =>
+                                            setSelectedSpice((prev) => ({ ...prev, nameKr: e.target.value }))
+                                        }
+                                        placeholder="ex) 블러드 오렌지"
+                                        required
+                                    />
                                 </div>
+                                {/* 계열 선택 */}
                                 <div className="admin-spices-modal-row">
-                                    <label>계열</label>
-                                    <select className='admin-spices-modal-row-spices'>
+                                    <label className="spices-form-label">계열</label>
+                                    <select className='admin-spices-modal-row-spices'
+                                        value={selectedSpice?.lineName || ""}
+                                        onChange={(e) =>
+                                            setSelectedSpice((prev) => ({ ...prev, category: e.target.value }))
+                                        }
+                                        required
+                                    >
                                         <option value="">계열을 선택하세요</option>
                                         <option value="Spicy">Spicy</option>
                                         <option value="Fruity">Fruity</option>
@@ -263,21 +308,30 @@ function SpicesList() {
                                         <option value="Tobacco Leather">Tobacco Leather</option>
                                     </select>
                                 </div>
+                                {/* 향료 설명 */}
                                 <div className="admin-spices-modal-row-description">
-                                    <label>향료 설명</label>
-                                    <textarea placeholder="ex) 달콤한 오렌지의..." />
+                                    <label className="spices-form-label">향료 설명</label>
+                                    <textarea
+                                        className="admin-spices-modal-row-description-input"
+                                        value={selectedSpice?.description || ""}
+                                        onChange={(e) =>
+                                            setSelectedSpice((prev) => ({ ...prev, description: e.target.value }))
+                                        }
+                                        placeholder="ex) 달콤한 오렌지의..."
+                                        required
+                                    ></textarea>
                                 </div>
                                 <div className="admin-spices-modal-row">
                                     <label className="admin-spices-modal-row-image-label">이미지</label>
                                     <div className="admin-spices-image-upload">
-                                        {editingItem?.isEditingImage ? (
+                                        {selectedSpice?.isEditingImage ? (
                                             <input
                                                 type="text"
                                                 className="admin-spices-url-input"
                                                 placeholder="새로운 이미지 URL 입력"
-                                                defaultValue={editingItem.imageUrl || ''}
+                                                defaultValue={selectedSpice.imageUrl || ''}
                                                 onBlur={(e) =>
-                                                    setEditingItem((prev) => ({
+                                                    setSelectedSpice((prev) => ({
                                                         ...prev,
                                                         imageUrl: e.target.value,
                                                         isEditingImage: false,
@@ -285,7 +339,7 @@ function SpicesList() {
                                                 }
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
-                                                        setEditingItem((prev) => ({
+                                                        setSelectedSpice((prev) => ({
                                                             ...prev,
                                                             imageUrl: e.target.value,
                                                             isEditingImage: false,
@@ -296,12 +350,12 @@ function SpicesList() {
                                         ) : (
                                             <div
                                                 onClick={() =>
-                                                    setEditingItem((prev) => ({ ...prev, isEditingImage: true }))
+                                                    setSelectedSpice((prev) => ({ ...prev, isEditingImage: true }))
                                                 }
                                             >
-                                                {editingItem?.imageUrl || imagePreview ? (
+                                                {selectedSpice?.imageUrl || imagePreview ? (
                                                     <img
-                                                        src={editingItem.imageUrl || imagePreview}
+                                                        src={selectedSpice.imageUrl || imagePreview}
                                                         alt="미리보기"
                                                         className="admin-spices-image-preview"
                                                     />
@@ -335,9 +389,9 @@ function SpicesList() {
                                     <input
                                         type="text"
                                         className='admin-spices-modal-row-name'
-                                        value={editingItem?.name || ''}
+                                        value={selectedSpice?.name || ''}
                                         onChange={(e) =>
-                                            setEditingItem((prev) => ({ ...prev, name: e.target.value }))
+                                            setSelectedSpice((prev) => ({ ...prev, name: e.target.value }))
                                         }
                                         placeholder="ex) Blood Orange"
                                     />
@@ -347,9 +401,9 @@ function SpicesList() {
                                     <input
                                         type="text"
                                         className='admin-spices-modal-row-name-kr'
-                                        value={editingItem?.nameKr || ''}
+                                        value={selectedSpice?.nameKr || ''}
                                         onChange={(e) =>
-                                            setEditingItem((prev) => ({ ...prev, name: e.target.value }))
+                                            setSelectedSpice((prev) => ({ ...prev, name: e.target.value }))
                                         }
                                         placeholder="ex) Blood Orange"
                                     />
@@ -358,9 +412,9 @@ function SpicesList() {
                                     <label>계열</label>
                                     <select
                                         className='admin-spices-modal-row-spices'
-                                        value={editingItem?.line || ''}
+                                        value={selectedSpice?.line || ''}
                                         onChange={(e) =>
-                                            setEditingItem((prev) => ({ ...prev, line: e.target.value }))
+                                            setSelectedSpice((prev) => ({ ...prev, line: e.target.value }))
                                         }
                                     >
                                         <option value="">계열을 선택하세요</option>
@@ -384,9 +438,9 @@ function SpicesList() {
                                 <div className="admin-spices-modal-row-description">
                                     <label>향료 설명</label>
                                     <textarea
-                                        value={editingItem?.description || ''}
+                                        value={selectedSpice?.description || ''}
                                         onChange={(e) =>
-                                            setEditingItem((prev) => ({ ...prev, description: e.target.value }))
+                                            setSelectedSpice((prev) => ({ ...prev, description: e.target.value }))
                                         }
                                         placeholder="ex) 상큼하고 톡 쏘는 블러드 오렌지의 향"
                                     />
@@ -394,14 +448,14 @@ function SpicesList() {
                                 <div className="admin-spices-modal-row">
                                     <label className="admin-spices-modal-row-image-label">이미지</label>
                                     <div className="admin-spices-image-upload">
-                                        {editingItem?.isEditingImage ? (
+                                        {selectedSpice?.isEditingImage ? (
                                             <input
                                                 type="text"
                                                 className="admin-spices-url-input"
                                                 placeholder="새로운 이미지 URL 입력"
-                                                defaultValue={editingItem.imageUrl || ''}
+                                                defaultValue={selectedSpice.imageUrl || ''}
                                                 onBlur={(e) =>
-                                                    setEditingItem((prev) => ({
+                                                    setSelectedSpice((prev) => ({
                                                         ...prev,
                                                         imageUrl: e.target.value,
                                                         isEditingImage: false,
@@ -409,7 +463,7 @@ function SpicesList() {
                                                 }
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
-                                                        setEditingItem((prev) => ({
+                                                        setSelectedSpice((prev) => ({
                                                             ...prev,
                                                             imageUrl: e.target.value,
                                                             isEditingImage: false,
@@ -420,12 +474,12 @@ function SpicesList() {
                                         ) : (
                                             <div
                                                 onClick={() =>
-                                                    setEditingItem((prev) => ({ ...prev, isEditingImage: true }))
+                                                    setSelectedSpice((prev) => ({ ...prev, isEditingImage: true }))
                                                 }
                                             >
-                                                {editingItem?.imageUrl || imagePreview ? (
+                                                {selectedSpice?.imageUrl || imagePreview ? (
                                                     <img
-                                                        src={editingItem.imageUrl || imagePreview}
+                                                        src={selectedSpice.imageUrl || imagePreview}
                                                         alt="미리보기"
                                                         className="admin-spices-image-preview"
                                                     />
