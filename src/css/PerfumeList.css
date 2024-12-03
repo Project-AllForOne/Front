@@ -109,7 +109,7 @@
 .perfume-item-card {
     position: relative; /* 자식 요소 위치를 기준으로 설정 */
     width: 200px;
-    height: 300px;
+    height: 320px;
     background: #FFFFFF;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     border-radius: 20px;
@@ -289,15 +289,25 @@
     justify-content: center; /* 가로 중앙 정렬 */
     align-items: center; /* 세로 중앙 정렬 */
     z-index: 100; /* 화면 위에 표시 */
+    overflow: hidden; /* 스크롤 방지 */
 }
 
 .admin-perfume-modal-container {
+    width: 550px; /* 모달 창의 너비 */
+    max-height: 90vh; /* 화면 높이의 90%로 제한 */
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+}
+
+.admin-perfume-modal-content {
     background: #fff;
     padding: 20px;
     border-radius: 10px;
     width: 400px; /* 모달 창의 고정된 너비 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
-    font-family: Arial, sans-serif;
+    height: 800px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     position: relative;
     text-align: left;
     height: 600px;
@@ -307,28 +317,15 @@
     background-color: #EFEDED;
     padding: 20px;
     border-radius: 10px;
-    width: 400px; /* 모달 창의 고정된 너비 */
-    font-family: Arial, sans-serif;
+    width: 400px; 
     position: relative;
     text-align: center;
 }
 
 .admin-perfume-modal-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     text-align: center;
-    margin-bottom: 40px;
-}
-
-.admin-perfume-modal-row {
-    display: flex;
-    justify-content: space-evenly;
-    margin-bottom: 30px;
-}
-
-.admin-perfume-modal-row-description {
-    display: flex;
-    justify-content: space-evenly;
     margin-bottom: 40px;
 }
 
@@ -348,10 +345,34 @@
     font-weight: bold;
 }
 
+.admin-perfume-modal-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    align-items: center;
+    margin-left: 50px;
+    margin-right: 50px;
+}
+
+.admin-perfume-modal-row2{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    align-items: center;
+    margin-left: 50px;
+    margin-right: 50px;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
 .admin-perfume-modal-row input,
-.admin-perfume-modal-row-description textarea,
-.admin-perfume-form-select,
-.admin-perfume-modal-row-concentration {
+.admin-perfume-modal-row-description,
+.admin-perfume-modal-row-grade,
+.admin-perfume-modal-row-singleNote,
+.admin-perfume-modal-row-topNote,
+.admin-perfume-modal-row-middleNote,
+.admin-perfume-modal-row-baseNote,
+.admin-perfume-image-url-input {
     flex-basis: 65%;
     padding: 10px;
     border: 1px solid #ddd;
@@ -360,9 +381,22 @@
     background-color: #EFEDED;
 }
 
-.admin-perfume-modal-row-description textarea {
+.admin-perfume-modal-row-concentration{
+    flex-basis: 70%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #EFEDED;
+}
+
+.admin-perfume-modal-row-description {
     resize: none;
     height: 80px;
+}
+
+.admin-perfume-image-url-input{
+    margin-left: 300px;
 }
 
 .admin-perfume-image-preview {
@@ -386,11 +420,7 @@
     cursor: pointer;
     border-radius: 5px;
     background-color: #EFEDED; /* 배경색 */
-    transform: translateX(-140px);
-}
-
-.admin-perfume-modal-row-image-label {
-    transform: translateX(-70px);
+    transform: translateX(-260px);
 }
 
 .admin-perfume-placeholder {
@@ -421,15 +451,11 @@
     cursor: pointer;
 }
 
-.admin-perfume-save-button {
-    background-color: #fff;
-    color: black;
-
-}
-
+.admin-perfume-save-button,
 .admin-perfume-cancel-button {
     background-color: #fff;
-    color: black;
+    color: rgb(37, 37, 37);
+    border-radius: 5px;
 }
 
 .admin-perfume-edit-button {
@@ -440,7 +466,6 @@
     border: none;
     cursor: pointer;
     padding: 5px;
-    z-index: 10; /* 다른 요소 위에 표시 */
 }
 
 .admin-perfume-edit-button:hover {
