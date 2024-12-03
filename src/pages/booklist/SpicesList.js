@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     fetchSpices,
-    addSpice,
-    updateSpice,
-    removeSpice,
+    createSpices,
+    modifySpices,
+    deleteSpices,
     selectSpices,
     selectLoading
 } from '../../module/SpicesModule';
@@ -107,13 +107,13 @@ function SpicesList() {
 
     const handleSubmit = () => {
         if (isAdding) {
-            dispatch(addSpice(editingItem));
+            dispatch(createSpices(editingItem));
             setSuccessMessage('항료가 성공적으로 등록되었습니다!');
             setIsAdding(false);
         }
 
         if (isEditing) {
-            dispatch(updateSpice(editingItem));
+            dispatch(modifySpices(editingItem));
             setSuccessMessage('항료가 성공적으로 수정되었습니다!');
             setIsEditing(false);
         }
@@ -123,7 +123,7 @@ function SpicesList() {
 
     const handleDeleteConfirm = () => {
         if (selectedItem) {
-            dispatch(removeSpice(selectedItem.id));
+            dispatch(deleteSpices(selectedItem.id));
             setIsDeleting(false);
             setSuccessMessage(`${selectedItem.name} 항료 카드가 삭제되었습니다!`);
         }
@@ -193,17 +193,6 @@ function SpicesList() {
             parseInt(backgroundColor.slice(3, 5), 16) * 0.587 +
             parseInt(backgroundColor.slice(5, 7), 16) * 0.114;
         return brightness > 128 ? '#000000' : '#FFFFFF';
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleReset = () => {

@@ -12,9 +12,9 @@ const initialState = {
 export const {
     spices: { 
         fetchSpicesStart, fetchSpicesSuccess, fetchSpicesFail,
-        createSpiceStart, createSpiceSuccess, createSpiceFail,
-        modifySpiceStart, modifySpiceSuccess, modifySpiceFail,
-        deleteSpiceStart, deleteSpiceSuccess, deleteSpiceFail
+        createSpicesStart, createSpicesSuccess, createSpicesFail,
+        modifySpicesStart, modifySpicesSuccess, modifySpicesFail,
+        deleteSpicesStart, deleteSpicesSuccess, deleteSpicesFail
     },
 } = createActions({
     SPICES: {
@@ -22,17 +22,17 @@ export const {
         FETCH_SPICES_SUCCESS: (spices) => spices,
         FETCH_SPICES_FAIL: (error) => error,
         
-        CREATE_SPICE_START: () => {},
-        CREATE_SPICE_SUCCESS: (spice) => spice,
-        CREATE_SPICE_FAIL: (error) => error,
+        CREATE_SPICES_START: () => {},
+        CREATE_SPICES_SUCCESS: (spice) => spice,
+        CREATE_SPICES_FAIL: (error) => error,
         
-        MODIFY_SPICE_START: () => {},
-        MODIFY_SPICE_SUCCESS: (spice) => spice,
-        MODIFY_SPICE_FAIL: (error) => error,
+        MODIFY_SPICES_START: () => {},
+        MODIFY_SPICES_SUCCESS: (spice) => spice,
+        MODIFY_SPICES_FAIL: (error) => error,
         
-        DELETE_SPICE_START: () => {},
-        DELETE_SPICE_SUCCESS: (spiceId) => spiceId,
-        DELETE_SPICE_FAIL: (error) => error,
+        DELETE_SPICES_START: () => {},
+        DELETE_SPICES_SUCCESS: (spiceId) => spiceId,
+        DELETE_SPICES_FAIL: (error) => error,
     },
 });
 
@@ -48,39 +48,33 @@ export const fetchSpices = () => async (dispatch) => {
     }
 };
 
-export const addSpice = (spiceData) => async (dispatch) => {
+export const createSpices = (spiceData) => async (dispatch) => {
     try {
-        dispatch(createSpiceStart());
-        await createSpice(spiceData);
-        const updatedSpices = await getAllSpices();
-        dispatch(createSpiceSuccess(updatedSpices));
+        dispatch(createSpicesStart());
+        const createdSpice = await createSpice(spiceData); // API 호출
+        dispatch(createSpicesSuccess(createdSpice));
     } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || "향료 생성 실패";
-        dispatch(createSpiceFail(errorMessage));
+        dispatch(createSpicesFail(error.message || "향료 추가 실패"));
     }
 };
 
-export const updateSpice = (spiceData) => async (dispatch) => {
+export const modifySpices = (spiceData) => async (dispatch) => {
     try {
-        dispatch(modifySpiceStart());
-        await modifySpice(spiceData);
-        const updatedSpices = await getAllSpices();
-        dispatch(modifySpiceSuccess(updatedSpices));
+        dispatch(modifySpicesStart());
+        const modifiedSpice = await modifySpice(spiceData);
+        dispatch(modifySpicesSuccess(modifiedSpice));
     } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || "향료 수정 실패";
-        dispatch(modifySpiceFail(errorMessage));
+        dispatch(modifySpicesFail(error.message || "향수 수정 실패"));
     }
 };
 
-export const removeSpice = (spiceId) => async (dispatch) => {
+export const deleteSpices = (spiceId) => async (dispatch) => {
     try {
-        dispatch(deleteSpiceStart());
+        dispatch(deleteSpicesStart());
         await deleteSpice(spiceId);
-        const updatedSpices = await getAllSpices();
-        dispatch(deleteSpiceSuccess(updatedSpices));
+        dispatch(deleteSpicesSuccess(spiceId));
     } catch (error) {
-        const errorMessage = error.response?.data?.message || error.message || "향료 삭제 실패";
-        dispatch(deleteSpiceFail(errorMessage));
+        dispatch(deleteSpicesFail(error.message || "향수 삭제 실패"));
     }
 };
 
@@ -104,52 +98,52 @@ const spiceReducer = handleActions(
             error: payload,
         }),
 
-        [createSpiceStart]: (state) => ({
+        [createSpicesStart]: (state) => ({
             ...state,
             loading: true,
             error: null,
         }),
-        [createSpiceSuccess]: (state, { payload }) => ({
+        [createSpicesSuccess]: (state, { payload }) => ({
             ...state,
             spices: payload,
             loading: false,
             error: null,
         }),
-        [createSpiceFail]: (state, { payload }) => ({
+        [createSpicesFail]: (state, { payload }) => ({
             ...state,
             loading: false,
             error: payload,
         }),
 
-        [modifySpiceStart]: (state) => ({
+        [modifySpicesStart]: (state) => ({
             ...state,
             loading: true,
             error: null,
         }),
-        [modifySpiceSuccess]: (state, { payload }) => ({
+        [modifySpicesSuccess]: (state, { payload }) => ({
             ...state,
             spices: payload,
             loading: false,
             error: null,
         }),
-        [modifySpiceFail]: (state, { payload }) => ({
+        [modifySpicesFail]: (state, { payload }) => ({
             ...state,
             loading: false,
             error: payload,
         }),
 
-        [deleteSpiceStart]: (state) => ({
+        [deleteSpicesStart]: (state) => ({
             ...state,
             loading: true,
             error: null,
         }),
-        [deleteSpiceSuccess]: (state, { payload }) => ({
+        [deleteSpicesSuccess]: (state, { payload }) => ({
             ...state,
             spices: payload,
             loading: false,
             error: null,
         }),
-        [deleteSpiceFail]: (state, { payload }) => ({
+        [deleteSpicesFail]: (state, { payload }) => ({
             ...state,
             loading: false,
             error: payload,
@@ -158,7 +152,8 @@ const spiceReducer = handleActions(
     initialState
 );
 
-// Selector 함수
+// Selector 함수 사용
+// -> 동일한 상태를 여러 컴포넌트에서 사용할 때, Selector 함수로 관리하면 중복 코드 없이 사용 가능
 export const selectSpices = (state) => state.spices.spices;
 export const selectLoading = (state) => state.spices.loading;
 export const selectError = (state) => state.spices.error;
