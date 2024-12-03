@@ -14,9 +14,10 @@ import {
 import LoadingScreen from '../../components/loading/LoadingScreen';
 
 function SpicesList() {
+
     const dispatch = useDispatch();
-    const spices = useSelector(selectSpices);
-    const loading = useSelector(selectLoading);
+    const spices = useSelector(selectSpices); // Redux 상태에서 데이터 가져오기
+    const loading = useSelector(selectLoading); // 로딩 상태 가져오기
     const navigate = useNavigate();
 
     const [activeFilters, setActiveFilters] = useState(new Set(['ALL']));
@@ -25,16 +26,19 @@ function SpicesList() {
     const [hoveredItemId, setHoveredItemId] = useState(null);
     const [isSelecting, setIsSelecting] = useState(false);
     const [selectedItems, setSelectedItems] = useState(new Set());
-    const [isAdding, setIsAdding] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [selectedItem, setSelectedItem] = useState(null);
+    const [isAdding, setIsAdding] = useState(false); // 추가 모달 상태
+    const [isDeleting, setIsDeleting] = useState(false); // 삭제 모달 상태
+    const [successMessage, setSuccessMessage] = useState(''); // 성공 메시지 모달 상태
+    const [selectedItem, setSelectedItem] = useState(null); // 삭제할 항목
     const [imagePreview, setImagePreview] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [role, setRole] = useState(null);
     const itemsPerPage = 12;
-    const pageLimit = 10;
+    const pageLimit = 10
+
+
+
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('auth'));
