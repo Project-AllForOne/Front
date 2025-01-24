@@ -1,11 +1,9 @@
-// AdminMembers.js
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import '../../css/admin/AdminMembers.css';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from "react-redux";
-import { fetchMembers, selectMembers, selectLoading } from "../../module/MemberModule";
-
+import { fetchMembers, selectMembers, selectLoading, updateMemberRole } from "../../module/MemberModule";
 
 function AdminMembers() {
 
@@ -16,6 +14,8 @@ function AdminMembers() {
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const membersPerPage = 10;
+    const [isEditing, setIsEditing] = useState(null); // 수정 중인지 체크
+    const [editedRole, setEditedRole] = useState(""); // 수정할 역할
 
     useEffect(() => {
         dispatch(fetchMembers());
@@ -23,12 +23,11 @@ function AdminMembers() {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        console.log("Search Term:", e.target.value); // 입력값 확인
+        console.log("Search Term:", e.target.value);
         setSearchTerm(e.target.value || "");
         setCurrentPage(1); // 검색 시 첫 페이지로 이동
     };
 
-    
     const filteredMembers = members.filter(member =>
         member.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -42,6 +41,18 @@ function AdminMembers() {
     // 페이지 변경 핸들러
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    const handleEditClick = (member) => {
+        setIsEditing(member.email); // 수정 시작
+        setEditedRole(member.role); // 수정할 역할 설정
+    };
+
+    const handleSaveClick = (memberEmail) => {
+        // 역할 저장 처리
+        dispatch(updateMemberRole({ email: memberEmail, role: editedRole }));
+        setIsEditing(null); // 수정 종료
+        alert('회원정보가 성공적으로 수정되었습니다.');
     };
 
     return (
@@ -87,6 +98,7 @@ function AdminMembers() {
                                     <th>출생연도</th>
                                     <th>가입일</th>
                                     <th>역할</th>
+                                    <th>관리</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -97,7 +109,37 @@ function AdminMembers() {
                                         <td>{member.gender}</td>
                                         <td>{member.birthyear}</td>
                                         <td>{new Date(member.createdAt).toLocaleDateString()}</td>
-                                        <td>{member.role}</td>
+                                        <td>
+                                            {isEditing === member.email ? (
+                                                <select
+                                                    value={editedRole}
+                                                    onChange={(e) => setEditedRole(e.target.value)}
+                                                    className="custom-dropdown"
+                                                >
+                                                    <option value="MEMBER">MEMBER</option>
+                                                    <option value="ADMIN">ADMIN</option>
+                                                </select>
+                                            ) : (
+                                                member.role
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isEditing === member.email ? (
+                                                <button
+                                                    className="admin-member-save-button"
+                                                    onClick={() => handleSaveClick(member.email)}
+                                                >
+                                                    저장
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="admin-member-edit-button"
+                                                    onClick={() => handleEditClick(member)}
+                                                >
+                                                    수정
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -22,7 +22,7 @@ function ErrorScreen({ errorMessage, onRetry, errorType }) {
                     <div className="error-content">
                         <p>네트워크 연결에 문제가 발생했습니다.</p>
                         <p>인터넷 연결을 확인하고 다시 시도해주세요.</p>
-                        <button className="retry-button" onClick={onRetry}>
+                        <button className= "retry-button" onClick={onRetry}>
                             다시 시도하기
                         </button>
                     </div>
@@ -35,6 +35,7 @@ function ErrorScreen({ errorMessage, onRetry, errorType }) {
                         <button className="retry-button" onClick={onRetry}>
                             다시 시도하기
                         </button>
+
                     </div>
                 );
         }

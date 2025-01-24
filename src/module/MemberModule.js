@@ -10,12 +10,13 @@ const initialState = {
 
 // 액션 생성
 export const {
-    members: { fetchMembersStart, fetchMembersSuccess, fetchMembersFail },
+    members: { fetchMembersStart, fetchMembersSuccess, fetchMembersFail, updateMemberRole },
 } = createActions({
     MEMBERS: {
         FETCH_MEMBERS_START: () => {}, // 데이터 요청 시작
         FETCH_MEMBERS_SUCCESS: (members) => members, // 요청 성공
         FETCH_MEMBERS_FAIL: (error) => error, // 요청 실패
+        UPDATE_MEMBER_ROLE: (memberData) => memberData, // 역할 업데이트
     },
 });
 
@@ -50,6 +51,14 @@ const memberReducer = handleActions(
             ...state,
             loading: false,
             error: payload, // 에러 메시지 저장
+        }),
+        [updateMemberRole]: (state, { payload }) => ({
+            ...state,
+            members: state.members.map((member) =>
+                member.email === payload.email
+                    ? { ...member, role: payload.role } // 역할 업데이트
+                    : member
+            ),
         }),
     },
     initialState

@@ -165,3 +165,70 @@
     color: #A0A0A0;
     cursor: not-allowed;
 }
+
+
+.admin-member-edit-button {
+    padding: 7px 25px;
+    background-color: #F8E4FF;
+    border: 1px solid black;
+    color: black;
+    font-size: 17px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.admin-member-edit-button:hover {
+    background-color: #E7A1FF;
+}
+
+.admin-member-edit-button:active {
+    background-color: #E7A1FF;
+}
+
+.admin-member-save-button {
+    padding: 7px 25px;
+    background-color: #E7A1FF;
+    border: 1px solid black;
+    color: black;
+    font-size: 17px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* 드롭다운 메뉴 컨테이너 */
+select {
+    appearance: none;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    padding: 8px;
+    font-size: 14px;
+    width: 80%;
+    height: 120%;
+    cursor: pointer;
+    text-align: center;
+}
+
+/* 드롭다운 메뉴 열리는 스타일 */
+select:focus {
+    outline: none;
+    border-color: #888;
+}
+
+/* 드롭다운 아이템 커스텀 */
+select option {
+    background-color: #f5f5f5;
+    color: #333;
+    padding: 8px;
+    font-size: 14px;
+}
+
+select option:hover {
+    background-color: #ddd;
+}
+
+
+
+
+
