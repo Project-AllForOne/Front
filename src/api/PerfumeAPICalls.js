@@ -38,11 +38,18 @@ export const deletePerfumes = async (productId) => {
 // 향수 추가
 export const createPerfumes = async (perfumeData) => {
     try {
-        const response = await apis.post('/products', perfumeData); 
+        // 🚀 API 요청 전 데이터 확인
+        console.log("📤 [createPerfumes] 요청 데이터:", JSON.stringify(perfumeData, null, 2));
+
+        const response = await apis.post('/products', perfumeData);
+
+        // ✅ API 응답 데이터 확인
+        console.log("✅ [createPerfumes] 응답 데이터:", response.data);
+
         return response.data;
     } catch (error) {
-        console.error("Error creating perfume:", error);
+        console.error("❌ [createPerfumes] Error creating perfume:", error);
         throw error;
     }
-}
+};
 

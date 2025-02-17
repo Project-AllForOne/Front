@@ -18,7 +18,7 @@ const PerfumeCard = ({
 
     // 이미지 URL이 배열인지 확인하고 기본값 설정
     const imageUrls = Array.isArray(perfume?.imageUrlList) && perfume.imageUrlList.length > 0
-        ? perfume.imageUrlList.map(url => url)  // 이미지 URL 배열 매핑
+        ? perfume.imageUrlList
         : ['https://sensient-beauty.com/wp-content/uploads/2023/11/Fragrance-Trends-Alcohol-Free.jpg'];
 
     // 자동 슬라이드 효과 추가
