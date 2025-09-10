@@ -190,12 +190,16 @@ function Main() {
                 {/* 관리자 문구 */}
                 {role === 'ADMIN' && (
                     <>
-                        <div className="admin-banner">
+                        <div 
+                            className="admin-banner"
+                            style={{ opacity: videoOpacity }}
+                        >
                             관리자입니다.
                         </div>
                         <button
                             className="dashboard-button"
                             onClick={() => setIsDashboardOpen(true)}
+                            style={{ opacity: videoOpacity }}
                         >
                             사용자 대시보드 <ChartColumnIncreasing size={20} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
                         </button>
@@ -205,6 +209,15 @@ function Main() {
                         />
                     </>
                 )}
+
+                {/* 쇼핑 버튼 */}
+                <button
+                    className="shop-button"
+                    onClick={() => navigate('/shop')}
+                    style={{ opacity: videoOpacity }}
+                >
+                    <img src="/images/shop.png" alt="쇼핑하기" className="shop-image" />
+                </button>
 
                 <video
                     ref={videoRef}

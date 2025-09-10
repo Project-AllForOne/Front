@@ -24,6 +24,9 @@ import Therapy from './pages/therapy/Therapy';
 import TherapyDiffuserRecommend from './components/therapy/TherapyDiffuserRecommend';
 import PerfumeDetail from './components/perfumes/PerfumeDetail';
 import ScentLens from './pages/scentlens/Scentlens';
+import Shop from './pages/shop/Shop';
+import Wishlist from './pages/shop/Wishlist';
+import Cart from './pages/shop/Cart';
 
 // 원래 로그인
 import LoginTest from "./pages/test/LoginTest";
@@ -71,6 +74,9 @@ function App() {
             <Route path='/therapy' element={<Therapy />} />
             <Route path='/therapy/recommend' element={<TherapyDiffuserRecommend />} />
             <Route path='/reviews/:id' element={<PerfumeReviews />} />
+            <Route path='/shop' element={<Shop />} />
+            <Route path='/wishlist' element={<Wishlist />} />
+            <Route path='/cart' element={<Cart />} />
           </Route>
 
 
