@@ -4,6 +4,7 @@ import authReducer from "./module/AuthModule";
 import memberReducer from "./module/MemberModule";
 import spiceReducer from "./module/SpicesModule";
 import perfumeReducer from "./module/PerfumeModule";
+import shopReducer from "./module/ShopModule";
 import chatReducer from "./module/ChatModule";
 import historyReducer from "./module/HistoryModule";
 import therapyReducer from "./module/TherapyModule";
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
     members: memberReducer,
     spices: spiceReducer,
     perfumes: perfumeReducer,
+    shop: shopReducer,
     chat: chatReducer,
     history: historyReducer,
     therapy: therapyReducer,
