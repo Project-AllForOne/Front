@@ -1,9 +1,12 @@
 // React와 관련 라이브러리 import
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Search, Filter, Heart, ShoppingBag } from 'lucide-react';
 import PerfumeCard from './PerfumeCard';
 import NotificationBadge from './NotificationBadge';
+import { selectWishlistIds } from '../../module/WishlistModule';
+import { selectCartCount } from '../../module/CartModule';
 import styles from '../../css/shop/ShoppingTab.module.css';
 
 /**
@@ -20,71 +23,21 @@ function ShoppingTab({ perfumes, wishlist, onToggleWishlist, onAddToCart, onView
     // React Router의 네비게이션 훅
     const navigate = useNavigate();
     
+    // Redux hooks
+    const dispatch = useDispatch();
+    
+    // Redux 상태에서 찜 목록 ID Set 가져오기
+    const wishlistIds = useSelector(selectWishlistIds);
+    
+    // Redux 상태에서 장바구니 개수 가져오기
+    const cartCount = useSelector(selectCartCount);
+    
     // 검색어 상태 관리
     const [searchTerm, setSearchTerm] = useState('');
     
     // 현재 활성화된 탭 상태 (shopping, wishlist, cart)
     const [activeTab, setActiveTab] = useState('shopping');
-    
-    // 찜 목록 개수 상태
-    const [wishlistCount, setWishlistCount] = useState(0);
-    
-    // 장바구니 아이템 개수 상태
-    const [cartCount, setCartCount] = useState(0);
 
-    /**
-     * localStorage에서 찜과 장바구니 개수를 불러와서 상태를 업데이트하는 useEffect
-     * 컴포넌트가 마운트될 때 실행되고, localStorage 변경을 감지합니다.
-     */
-    useEffect(() => {
-        // 찜과 장바구니 개수를 업데이트하는 함수
-        const updateCounts = () => {
-            // localStorage에서 찜 목록 가져오기
-            const savedWishlist = localStorage.getItem('wishlist');
-            // localStorage에서 장바구니 목록 가져오기
-            const savedCart = localStorage.getItem('cart');
-            
-            // 찜 목록이 있으면 개수 업데이트
-            if (savedWishlist) {
-                setWishlistCount(JSON.parse(savedWishlist).length);
-            }
-            
-            // 장바구니가 있으면 총 아이템 개수 계산 (수량 포함)
-            if (savedCart) {
-                const cart = JSON.parse(savedCart);
-                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-                setCartCount(totalItems);
-            }
-        };
-
-        // 초기 개수 업데이트
-        updateCounts();
-        
-        // localStorage 변경을 감지하는 이벤트 리스너
-        const handleStorageChange = () => {
-            updateCounts();
-        };
-        
-        // storage 이벤트 리스너 등록 (다른 탭에서 localStorage 변경 시)
-        window.addEventListener('storage', handleStorageChange);
-        
-        // 주기적으로 업데이트 (다른 탭에서 변경된 경우를 대비)
-        const interval = setInterval(updateCounts, 500);
-        
-        // 컴포넌트 언마운트 시 이벤트 리스너와 인터벌 정리
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            clearInterval(interval);
-        };
-    }, []); // 빈 의존성 배열로 컴포넌트 마운트 시에만 실행
-
-    /**
-     * 찜 목록이 변경될 때마다 찜 개수를 업데이트하는 useEffect
-     * props로 받은 wishlist Set의 크기를 찜 개수로 설정합니다.
-     */
-    useEffect(() => {
-        setWishlistCount(wishlist.size);
-    }, [wishlist]); // wishlist가 변경될 때마다 실행
 
     /**
      * 검색어에 따라 향수 목록을 필터링하는 함수
@@ -162,10 +115,11 @@ function ShoppingTab({ perfumes, wishlist, onToggleWishlist, onAddToCart, onView
                         <button 
                             className={`${styles.tabButton} ${activeTab === 'wishlist' ? styles.tabButtonActive : ''}`}
                             onClick={() => handleTabClick('wishlist')}
+                            data-tab="wishlist"
                         >
                             <div className={styles.tabIconContainer}>
                                 <Heart className={styles.tabIcon} size={16} />
-                                <NotificationBadge count={wishlistCount} show={wishlistCount > 0} type="wishlist" />
+                                <NotificationBadge count={wishlistIds.size} show={wishlistIds.size > 0} type="wishlist" />
                             </div>
                             찜
                         </button>
@@ -175,6 +129,7 @@ function ShoppingTab({ perfumes, wishlist, onToggleWishlist, onAddToCart, onView
                         <button 
                             className={`${styles.tabButton} ${activeTab === 'cart' ? styles.tabButtonActive : ''}`}
                             onClick={() => handleTabClick('cart')}
+                            data-tab="cart"
                         >
                             <div className={styles.tabIconContainer}>
                                 <div className={styles.shoppingBagIcon}></div>

@@ -15,10 +15,6 @@ import styles from '../../css/shop/PerfumeCard.module.css';
  * @param {Function} onViewDetail - 향수 상세보기 함수
  */
 function PerfumeCard({ perfume, isWishlisted, onToggleWishlist, onAddToCart, onViewDetail }) {
-    // 할인율 계산 (원가가 있는 경우에만)
-    const discount = perfume.originalPrice
-        ? Math.round(((perfume.originalPrice - perfume.price) / perfume.originalPrice) * 100)
-        : 0;
 
     return (
         <div className={styles.perfumeCard}>
@@ -66,12 +62,6 @@ function PerfumeCard({ perfume, isWishlisted, onToggleWishlist, onAddToCart, onV
                             <span className={styles.price}>
                                 ₩{perfume.price.toLocaleString()}
                             </span>
-                            {/* 원가 (할인이 있는 경우에만 표시) */}
-                            {perfume.originalPrice && (
-                                <span className={styles.originalPrice}>
-                                    ₩{perfume.originalPrice.toLocaleString()}
-                                </span>
-                            )}
                         </div>
                     </div>
 

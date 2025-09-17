@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginSuccess, logout } from './module/AuthModule';
 import { fetchBookmarks, initializeBookmarks } from './module/BookmarkModule';
+import { fetchCart, resetCart } from './module/CartModule';
+import { fetchWishlist, resetWishlist } from './module/WishlistModule';
 import './App.css'
 
 import Main from "./pages/Main";
@@ -27,6 +29,7 @@ import ScentLens from './pages/scentlens/Scentlens';
 import Shop from './pages/shop/Shop';
 import Wishlist from './pages/shop/Wishlist';
 import Cart from './pages/shop/Cart';
+import ShopPerfumeDetail from './pages/shop/ShopPerfumeDetail';
 
 // 원래 로그인
 import LoginTest from "./pages/test/LoginTest";
@@ -45,9 +48,25 @@ function App() {
     if (isLogin && storedUser.role) {
       dispatch(loginSuccess(storedUser)); // Redux에 로그인 정보 업데이트
       dispatch(fetchBookmarks(storedUser.id)); // 북마크 정보 가져오기
+      
+      // 찜 목록 가져오기
+      try {
+        dispatch(fetchWishlist(storedUser.id));
+      } catch (error) {
+        console.warn('찜 목록 로드 실패:', error);
+      }
+      
+      // 장바구니 목록 가져오기
+      try {
+        dispatch(fetchCart(storedUser.id));
+      } catch (error) {
+        console.warn('장바구니 목록 로드 실패:', error);
+      }
     } else {
       dispatch(logout()); // Redux 상태 초기화
       dispatch(initializeBookmarks()); // 북마크 상태 초기화
+      dispatch(resetWishlist()); // 찜 상태 초기화
+      dispatch(resetCart()); // 장바구니 상태 초기화
     }
   }, [dispatch]);
 
@@ -77,6 +96,7 @@ function App() {
             <Route path='/shop' element={<Shop />} />
             <Route path='/wishlist' element={<Wishlist />} />
             <Route path='/cart' element={<Cart />} />
+            <Route path='/perfume/:id' element={<ShopPerfumeDetail />} />
           </Route>
 
 
