@@ -4,6 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import ShoppingTab from '../../components/shop/ShoppingTab';
 import { fetchShopPerfumes, selectShopPerfumes, selectShopLoading, selectShopError } from '../../module/ShopModule';
+import { 
+    fetchWishlist, 
+    addToWishlistThunk, 
+    removeFromWishlistThunk, 
+    selectWishlistIds, 
+    selectWishlistLoading, 
+    selectWishlistError,
+    setMemberId 
+} from '../../module/WishlistModule';
+import { addToCartThunk, fetchCart } from '../../module/CartModule';
 import '../../css/shop/Shop.css';
 
 
@@ -24,70 +34,62 @@ function Shop() {
     const loading = useSelector(selectShopLoading);
     const error = useSelector(selectShopError);
     
-    // 찜 목록 상태 (Set을 사용하여 중복 방지)
-    const [wishlist, setWishlist] = useState(new Set());
+    // 찜 목록 상태 (Redux에서 가져오기)
+    const wishlistIds = useSelector(selectWishlistIds);
+    const wishlistLoading = useSelector(selectWishlistLoading);
+    const wishlistError = useSelector(selectWishlistError);
+    
+    // 임시 회원 ID (실제로는 로그인된 사용자 ID를 사용해야 함)
+    const [memberId, setMemberIdState] = useState(1);
 
     /**
      * 컴포넌트 마운트 시 실행되는 useEffect
-     * localStorage에서 찜 목록을 불러오고, 백엔드에서 자체제작 향수 목록을 가져옵니다.
+     * 백엔드에서 자체제작 향수 목록과 찜 목록을 가져옵니다.
      */
     useEffect(() => {
-        // localStorage에서 찜 목록 불러오기
-        const savedWishlist = localStorage.getItem('wishlist');
-        if (savedWishlist) {
-            setWishlist(new Set(JSON.parse(savedWishlist)));
-        }
-
+        // 회원 ID 설정
+        dispatch(setMemberId(memberId));
+        
         // 백엔드에서 자체제작 향수 목록 가져오기
         dispatch(fetchShopPerfumes());
-    }, [dispatch]); // dispatch가 변경될 때마다 실행
+        
+        // 백엔드에서 찜 목록 가져오기
+        dispatch(fetchWishlist(memberId));
+        
+        // 백엔드에서 장바구니 목록 가져오기
+        dispatch(fetchCart(memberId));
+    }, [dispatch, memberId]); // dispatch와 memberId가 변경될 때마다 실행
 
     /**
      * 찜 목록에 향수를 추가하거나 제거하는 함수
+     * 백엔드 API를 통해 찜 상태를 변경합니다.
      * 
      * @param {string} id - 찜할/제거할 향수의 ID
      */
     const handleToggleWishlist = (id) => {
-        setWishlist(prev => {
-            const newWishlist = new Set(prev);
-            if (newWishlist.has(id)) {
-                // 이미 찜한 항목이면 제거
-                newWishlist.delete(id);
-            } else {
-                // 찜하지 않은 항목이면 추가
-                newWishlist.add(id);
-            }
-            // localStorage에 저장 (Set을 배열로 변환하여 저장)
-            localStorage.setItem('wishlist', JSON.stringify([...newWishlist]));
-            return newWishlist;
-        });
+        if (wishlistIds.has(id)) {
+            // 이미 찜한 항목이면 제거
+            dispatch(removeFromWishlistThunk(memberId, id));
+        } else {
+            // 찜하지 않은 항목이면 추가
+            dispatch(addToWishlistThunk(memberId, id));
+        }
     };
 
     /**
      * 장바구니에 향수를 추가하는 함수
-     * 이미 장바구니에 있는 향수면 수량을 증가시키고, 없으면 새로 추가합니다.
+     * 백엔드 API를 통해 장바구니에 향수를 추가합니다.
      * 추가 후 시각적 피드백을 위한 애니메이션을 적용합니다.
      * 
      * @param {Object} perfume - 장바구니에 추가할 향수 객체
      */
     const handleAddToCart = (perfume) => {
-        // localStorage에서 기존 장바구니 데이터 불러오기
-        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const existingItem = cart.find(item => item.id === perfume.id);
-        
-        if (existingItem) {
-            // 이미 장바구니에 있는 향수면 수량 증가
-            existingItem.quantity += 1;
-        } else {
-            // 새로운 향수면 수량 1로 추가
-            cart.push({ ...perfume, quantity: 1 });
-        }
-        
-        // 업데이트된 장바구니를 localStorage에 저장
-        localStorage.setItem('cart', JSON.stringify(cart));
+        // 백엔드 API를 통해 장바구니에 추가
+        dispatch(addToCartThunk(memberId, perfume.id, 1));
         
         // 장바구니 아이콘에 애니메이션 효과 추가 (확대 후 원래 크기로)
-        const cartIcons = document.querySelectorAll('.shopping-bag-icon');
+        // ShoppingTab 컴포넌트의 실제 클래스명 사용
+        const cartIcons = document.querySelectorAll('.shoppingBagIcon');
         cartIcons.forEach(icon => {
             icon.style.transform = 'scale(1.3)';
             icon.style.transition = 'transform 0.3s ease';
@@ -97,6 +99,7 @@ function Shop() {
         });
         
         // 장바구니 배지에 애니메이션 효과 추가 (확대 후 원래 크기로)
+        // NotificationBadge 컴포넌트의 실제 구조 사용
         const cartBadges = document.querySelectorAll('[data-badge="cart"]');
         cartBadges.forEach(badge => {
             badge.style.transform = 'scale(1.2)';
@@ -105,22 +108,31 @@ function Shop() {
                 badge.style.transform = 'scale(1)';
             }, 200);
         });
+        
+        // 장바구니 탭 버튼에도 애니메이션 효과 추가
+        const cartTabButtons = document.querySelectorAll('[data-tab="cart"]');
+        cartTabButtons.forEach(button => {
+            button.style.transform = 'scale(1.05)';
+            button.style.transition = 'transform 0.2s ease';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 200);
+        });
     };
 
     /**
      * 향수 상세보기 함수
-     * 향수 카드 클릭 시 실행되는 함수입니다.
-     * 현재는 콘솔에 로그만 출력하며, 향후 상세 페이지로 이동하는 로직이 구현될 예정입니다.
+     * 향수 카드 클릭 시 상세 페이지로 이동합니다.
      * 
      * @param {Object} perfume - 상세보기할 향수 객체
      */
     const handleViewDetail = (perfume) => {
-        console.log('상세보기:', perfume);
-        // 향후 상세보기 로직 구현 예정
+        // 향수 상세 페이지로 이동
+        navigate(`/perfume/${perfume.id}`);
     };
 
     // 로딩 상태일 때 표시할 컴포넌트
-    if (loading) {
+    if (loading || wishlistLoading) {
         return (
             <>
                 {/* 상단 로고 (클릭 시 메인 페이지로 이동) */}
@@ -146,7 +158,7 @@ function Shop() {
     }
 
     // 에러 상태일 때 표시할 컴포넌트
-    if (error) {
+    if (error || wishlistError) {
         return (
             <>
                 {/* 상단 로고 (클릭 시 메인 페이지로 이동) */}
@@ -163,10 +175,13 @@ function Shop() {
                     <div className="shop-content">
                         <div className="error-container">
                             <h3>오류가 발생했습니다</h3>
-                            <p>{error}</p>
+                            <p>{error || wishlistError}</p>
                             <button 
                                 className="retry-button"
-                                onClick={() => dispatch(fetchShopPerfumes())}
+                                onClick={() => {
+                                    dispatch(fetchShopPerfumes());
+                                    dispatch(fetchWishlist(memberId));
+                                }}
                             >
                                 다시 시도
                             </button>
@@ -194,7 +209,7 @@ function Shop() {
                     {/* ShoppingTab 컴포넌트에 필요한 props 전달 */}
                     <ShoppingTab
                         perfumes={perfumes}                    // Redux에서 가져온 자체제작 향수 목록
-                        wishlist={wishlist}                   // 찜 목록 데이터
+                        wishlist={wishlistIds}                 // 찜 목록 ID Set
                         onToggleWishlist={handleToggleWishlist} // 찜하기 토글 함수
                         onAddToCart={handleAddToCart}          // 장바구니 추가 함수
                         onViewDetail={handleViewDetail}        // 상세보기 함수

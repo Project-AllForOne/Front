@@ -1,9 +1,23 @@
 // React와 관련 라이브러리 import
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Minus, Plus, Trash2, ShoppingBag, Search, Heart } from 'lucide-react';
 import NotificationBadge from '../../components/shop/NotificationBadge';
+import { 
+    fetchCart, 
+    removeFromCartThunk, 
+    clearAllCartThunk,
+    updateCartQuantityThunk,
+    selectCart, 
+    selectCartCount, 
+    selectCartLoading, 
+    selectCartError,
+    setMemberId 
+} from '../../module/CartModule';
+import { selectWishlistIds, fetchWishlist } from '../../module/WishlistModule';
 import '../../css/shop/Cart.css';
+import styles from '../../css/shop/ShoppingTab.module.css';
 
 /**
  * Cart 컴포넌트
@@ -14,43 +28,40 @@ function Cart() {
     // React Router의 네비게이션 훅
     const navigate = useNavigate();
     
-    // 장바구니 아이템 목록 상태
-    const [cart, setCart] = useState([]);
+    // Redux hooks
+    const dispatch = useDispatch();
     
-    // 찜 목록 개수 상태
-    const [wishlistCount, setWishlistCount] = useState(0);
+    // Redux 상태에서 데이터 가져오기
+    const cart = useSelector(selectCart);
+    const cartCount = useSelector(selectCartCount);
+    const cartLoading = useSelector(selectCartLoading);
+    const cartError = useSelector(selectCartError);
+    const wishlistIds = useSelector(selectWishlistIds);
     
-    // 장바구니 아이템 개수 상태
-    const [cartCount, setCartCount] = useState(0);
+    // localStorage에서 로그인된 사용자 정보 가져오기
+    const auth = JSON.parse(localStorage.getItem('auth'));
+    const memberId = auth?.id; // 로그인된 사용자의 ID (auth가 없으면 undefined)
 
     /**
-     * 컴포넌트 마운트 시 localStorage에서 장바구니 데이터를 불러오는 useEffect
+     * 컴포넌트 마운트 시 백엔드에서 장바구니와 찜 목록 데이터를 불러오는 useEffect
      */
     useEffect(() => {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-            setCart(JSON.parse(savedCart));
+        // 로그인된 사용자가 있을 때만 데이터를 가져옴
+        if (memberId) {
+            // 회원 ID 설정
+            dispatch(setMemberId(memberId));
+            
+            // 백엔드에서 장바구니 목록 가져오기
+            dispatch(fetchCart(memberId));
+            
+            // 백엔드에서 찜 목록 가져오기
+            dispatch(fetchWishlist(memberId));
         }
-    }, []); // 빈 의존성 배열로 컴포넌트 마운트 시에만 실행
-
-    /**
-     * 장바구니가 변경될 때마다 알림 개수를 업데이트하는 useEffect
-     */
-    useEffect(() => {
-        // 장바구니 총 아이템 개수 계산 (수량 포함)
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        setCartCount(totalItems);
-        
-        // localStorage에서 찜 목록 개수 가져오기
-        const savedWishlist = localStorage.getItem('wishlist');
-        if (savedWishlist) {
-            setWishlistCount(JSON.parse(savedWishlist).length);
-        }
-    }, [cart]); // cart가 변경될 때마다 실행
+    }, [dispatch, memberId]); // dispatch와 memberId가 변경될 때마다 실행
 
     /**
      * 아이템 수량을 업데이트하는 함수
-     * 수량이 0 이하가 되면 장바구니에서 제거합니다.
+     * 백엔드 API를 통해 수량을 수정합니다.
      * 
      * @param {string} perfumeId - 업데이트할 향수 ID
      * @param {number} newQuantity - 새로운 수량
@@ -58,27 +69,22 @@ function Cart() {
     const updateQuantity = (perfumeId, newQuantity) => {
         // 수량이 0 이하면 장바구니에서 제거
         if (newQuantity <= 0) {
-            removeFromCart(perfumeId);
+            dispatch(removeFromCartThunk(memberId, perfumeId));
             return;
         }
         
-        // 해당 아이템의 수량만 업데이트
-        const updatedCart = cart.map(item => 
-            item.id === perfumeId ? { ...item, quantity: newQuantity } : item
-        );
-        setCart(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        // 백엔드 API를 통해 수량 수정
+        dispatch(updateCartQuantityThunk(memberId, perfumeId, newQuantity));
     };
 
     /**
      * 장바구니에서 특정 아이템을 제거하는 함수
+     * 백엔드 API를 통해 아이템을 삭제합니다.
      * 
      * @param {string} perfumeId - 제거할 향수 ID
      */
     const removeFromCart = (perfumeId) => {
-        const updatedCart = cart.filter(item => item.id !== perfumeId);
-        setCart(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        dispatch(removeFromCartThunk(memberId, perfumeId));
     };
 
     /**
@@ -89,11 +95,10 @@ function Cart() {
 
     /**
      * 장바구니를 완전히 비우는 함수
-     * 상태와 localStorage를 모두 초기화합니다.
+     * 백엔드 API를 통해 장바구니를 전체 삭제합니다.
      */
     const clearCart = () => {
-        setCart([]);
-        localStorage.removeItem('cart');
+        dispatch(clearAllCartThunk(memberId));
     };
 
     /**
@@ -120,6 +125,64 @@ function Cart() {
         }, 150);
     };
 
+    // 로딩 상태일 때 표시할 컴포넌트
+    if (cartLoading) {
+        return (
+            <>
+                {/* 상단 로고 (클릭 시 메인 페이지로 이동) */}
+                <img
+                    src="/images/logo.png"
+                    alt="로고"
+                    className="main-logo-image"
+                    onClick={() => navigate('/')}
+                    style={{ cursor: 'pointer' }}
+                />
+                
+                {/* 로딩 상태 표시 */}
+                <div className="cart-container">
+                    <div className="cart-content">
+                        <div className="loading-container">
+                            <div className="loading-spinner"></div>
+                            <p>장바구니 목록을 불러오는 중...</p>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // 에러 상태일 때 표시할 컴포넌트
+    if (cartError) {
+        return (
+            <>
+                {/* 상단 로고 (클릭 시 메인 페이지로 이동) */}
+                <img
+                    src="/images/logo.png"
+                    alt="로고"
+                    className="main-logo-image"
+                    onClick={() => navigate('/')}
+                    style={{ cursor: 'pointer' }}
+                />
+                
+                {/* 에러 상태 표시 */}
+                <div className="cart-container">
+                    <div className="cart-content">
+                        <div className="error-container">
+                            <h3>오류가 발생했습니다</h3>
+                            <p>{cartError}</p>
+                            <button 
+                                className="retry-button"
+                                onClick={() => dispatch(fetchCart(memberId))}
+                            >
+                                다시 시도
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
             {/* 상단 로고 (클릭 시 메인 페이지로 이동) */}
@@ -132,45 +195,47 @@ function Cart() {
             />
             <div className="cart-container">
                 <div className="cart-content">
-                    {/* 페이지 헤더 영역 (제목과 네비게이션 탭) */}
-                    <div className="cart-header">
-                        <div className="header-content">
-                            {/* 페이지 제목 영역 */}
-                            <div className="title-section">
-                                <h1 className="cart-title">장바구니</h1>
-                                <p className="cart-subtitle">선택한 향수들을 확인하고 주문하세요. ({cart.length})</p>
+                    {/* 페이지 상단 헤더 영역 - ShoppingTab과 동일한 구조 */}
+                    <div className={styles.header}>
+                        <div className={styles.headerContent}>
+                            {/* 제목 영역 (검색바 대신) */}
+                            <div className={styles.searchBar}>
+                                <div className="title-section">
+                                    <h1 className="cart-title">장바구니</h1>
+                                    <p className="cart-subtitle">선택한 향수들을 확인하고 주문하세요. ({cart.length})</p>
+                                </div>
                             </div>
                             
                             {/* 네비게이션 탭 영역 */}
-                            <div className="nav-tabs">
+                            <div className={styles.navTabs}>
                                 {/* 쇼핑 탭 */}
                                 <button 
-                                    className="tab-button"
+                                    className={styles.tabButton}
                                     onClick={() => handleTabClick('shopping')}
                                 >
                                     쇼핑
                                 </button>
-                                <div className="tab-separator"></div>
+                                <div className={styles.tabSeparator}></div>
                                 
                                 {/* 찜 탭 (하트 아이콘과 알림 배지 포함) */}
                                 <button 
-                                    className="tab-button"
+                                    className={styles.tabButton}
                                     onClick={() => handleTabClick('wishlist')}
                                 >
-                                    <div className="tab-icon-container">
-                                        <Heart className="tab-icon" size={16} />
-                                        <NotificationBadge count={wishlistCount} show={wishlistCount > 0} type="wishlist" />
+                                    <div className={styles.tabIconContainer}>
+                                        <Heart className={styles.tabIcon} size={16} />
+                                        <NotificationBadge count={wishlistIds.size} show={wishlistIds.size > 0} type="wishlist" />
                                     </div>
                                     찜
                                 </button>
-                                <div className="tab-separator"></div>
+                                <div className={styles.tabSeparator}></div>
                                 
                                 {/* 장바구니 탭 (현재 활성화된 탭, 쇼핑백 아이콘과 알림 배지 포함) */}
                                 <button 
-                                    className="tab-button tab-button-active"
+                                    className={`${styles.tabButton} ${styles.tabButtonActive}`}
                                 >
-                                    <div className="tab-icon-container">
-                                        <div className="shopping-bag-icon"></div>
+                                    <div className={styles.tabIconContainer}>
+                                        <div className={styles.shoppingBagIcon}></div>
                                         <NotificationBadge count={cartCount} show={cartCount > 0} type="cart" />
                                     </div>
                                     장바구니
@@ -178,7 +243,7 @@ function Cart() {
                             </div>
                         </div>
                         {/* 헤더 하단 구분선 */}
-                        <div className="header-line"></div>
+                        <div className={styles.headerLine}></div>
                     </div>
 
                     {/* 장바구니에 아이템이 있을 때와 없을 때의 조건부 렌더링 */}
@@ -209,7 +274,12 @@ function Cart() {
                                             
                                             {/* 아이템 상세 정보 */}
                                             <div className="item-details">
-                                                <h3 className="item-name">{item.name}</h3>
+                                                <h3 
+                                                    className="item-name clickable" 
+                                                    onClick={() => navigate(`/perfume/${item.id}`)}
+                                                >
+                                                    {item.name}
+                                                </h3>
                                                 <p className="item-volume">{item.volume}</p>
                                                 
                                                 {/* 수량 조절 버튼 */}

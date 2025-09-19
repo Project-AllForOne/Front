@@ -45,6 +45,14 @@
     margin: 5px 0 0 0;
 }
 
+/* 액션 버튼들 - 가운데 배치 */
+.wishlist-action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+}
+
 /* Navigation Tabs */
 .nav-tabs {
     display: flex;
