@@ -69,21 +69,25 @@ function Wishlist() {
     const wishlistError = useSelector(selectWishlistError);
     const cartCount = useSelector(selectCartCount);
     
-    // 임시 회원 ID (실제로는 로그인된 사용자 ID를 사용해야 함)
-    const [memberId, setMemberIdState] = useState(1);
+    // localStorage에서 로그인된 사용자 정보 가져오기
+    const auth = JSON.parse(localStorage.getItem('auth'));
+    const memberId = auth?.id; // 로그인된 사용자의 ID (auth가 없으면 undefined)
 
     /**
      * 컴포넌트 마운트 시 백엔드에서 찜 목록을 불러오는 useEffect
      */
     useEffect(() => {
-        // 회원 ID 설정
-        dispatch(setMemberId(memberId));
-        
-        // 백엔드에서 찜 목록 가져오기
-        dispatch(fetchWishlist(memberId));
-        
-        // 백엔드에서 장바구니 목록 가져오기
-        dispatch(fetchCart(memberId));
+        // 로그인된 사용자가 있을 때만 데이터를 가져옴
+        if (memberId) {
+            // 회원 ID 설정
+            dispatch(setMemberId(memberId));
+            
+            // 백엔드에서 찜 목록 가져오기
+            dispatch(fetchWishlist(memberId));
+            
+            // 백엔드에서 장바구니 목록 가져오기
+            dispatch(fetchCart(memberId));
+        }
     }, [dispatch, memberId]); // dispatch와 memberId가 변경될 때마다 실행
 
     /**
