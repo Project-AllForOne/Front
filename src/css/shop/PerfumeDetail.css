@@ -295,6 +295,12 @@
     background-color: #d5d1d1;
 }
 
+/* 테마별 상세 내용 컨테이너 */
+.perfume-theme-details {
+    width: 100%;
+    margin-top: 0;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
     .perfume-detail-card {
