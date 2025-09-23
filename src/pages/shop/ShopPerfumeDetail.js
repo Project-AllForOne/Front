@@ -8,6 +8,7 @@ import Sidebar from '../../components/sidebar/Sidebar'; // 사이드바 컴포�
 import EtherTheme from '../../components/perfumes/themes/EtherTheme'; // 에테르 테마 컴포넌트
 import NuageTheme from '../../components/perfumes/themes/NuageTheme'; // 누아쥬 테마 컴포넌트
 import LunaTheme from '../../components/perfumes/themes/LunaTheme'; // 루나 테마 컴포넌트
+import SubscriptionTheme from '../../components/perfumes/themes/SubscriptionTheme'; // 정기구독 테마 컴포넌트
 import {
     addToWishlistThunk,
     removeFromWishlistThunk,
@@ -73,6 +74,9 @@ function ShopPerfumeDetail() {
                 const perfumeData = perfumeDataArray.find(p => p.id === parseInt(id)) || perfumeDataArray[0];
 
                 console.log('선택된 향수 데이터:', perfumeData);
+                console.log('향수 ID:', perfumeData.id);
+                console.log('향수 영문명:', perfumeData.nameEn);
+                console.log('향수 한글명:', perfumeData.nameKr);
 
                 // ===== 테마 설정 (향수 이름에 따라 UI 테마 결정) =====
                 let theme = 'luna'; // 기본 테마
@@ -88,7 +92,15 @@ function ShopPerfumeDetail() {
                 
                 console.log('정규화된 이름:', normalizedName);
                 
-                if (normalizedName.includes('ether')) {
+                if (normalizedName.includes('subscription') || 
+                    normalizedName.includes('banghyangsubscriptionbox') || 
+                    normalizedName.includes('signaturepackagebox') ||
+                    normalizedName.includes('packagebox') ||
+                    perfumeData.id === 4 || 
+                    perfumeData.id === 1578) {
+                    theme = 'subscription'; // 정기구독 테마
+                    console.log('정기구독 테마 선택됨');
+                } else if (normalizedName.includes('ether')) {
                     theme = 'ether'; // Ether 테마
                     console.log('에테르 테마 선택됨');
                 } else if (normalizedName.includes('nuage')) {
@@ -442,11 +454,13 @@ function ShopPerfumeDetail() {
                                             <span className="attribute-label">Main Accord</span>
                                             <span className="attribute-value accord-tag">{perfume.mainAccord || 'Unknown'}</span>
                                         </div>
-                                        {/* ===== 메인 노트 ===== */}
-                                        <div className="attribute-item">
-                                            <span className="attribute-label">Main Note</span>
-                                            <span className="attribute-value">{perfume.mainNote || 'Unknown'}</span>
-                                        </div>
+                                        {/* ===== 메인 노트 (정기구독 테마가 아닐 때만 표시) ===== */}
+                                        {perfume.theme !== 'subscription' && (
+                                            <div className="attribute-item">
+                                                <span className="attribute-label">Main Note</span>
+                                                <span className="attribute-value">{perfume.mainNote || 'Unknown'}</span>
+                                            </div>
+                                        )}
                                         {/* ===== 용량 ===== */}
                                         <div className="attribute-item">
                                             <span className="attribute-label">용량</span>
@@ -459,14 +473,16 @@ function ShopPerfumeDetail() {
                                         </div>
                                     </div>
 
-                                    {/* ===== 향수 노트 이미지 (테마에 따라 다른 이미지 표시) ===== */}
-                                    <div className="fragrance-notes-image">
-                                        <img
-                                            src={`/images/${perfume.theme}-note.png`}
-                                            alt={`${perfume.theme} 노트`}
-                                            className="notes-image"
-                                        />
-                                    </div>
+                                    {/* ===== 향수 노트 이미지 (정기구독 테마가 아닐 때만 표시) ===== */}
+                                    {perfume.theme !== 'subscription' && (
+                                        <div className="fragrance-notes-image">
+                                            <img
+                                                src={`/images/${perfume.theme}-note.png`}
+                                                alt={`${perfume.theme} 노트`}
+                                                className="notes-image"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </main>
@@ -475,6 +491,7 @@ function ShopPerfumeDetail() {
                         {perfume && (
                             <div className="perfume-theme-details">
                                 {console.log('렌더링 시 perfume.theme:', perfume.theme)}
+                                {perfume.theme === 'subscription' && <SubscriptionTheme perfume={perfume} />}
                                 {perfume.theme === 'ether' && <EtherTheme perfume={perfume} />}
                                 {perfume.theme === 'nuage' && <NuageTheme perfume={perfume} />}
                                 {perfume.theme === 'luna' && <LunaTheme perfume={perfume} />}

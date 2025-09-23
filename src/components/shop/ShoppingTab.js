@@ -119,7 +119,7 @@ function ShoppingTab({ perfumes, wishlist, onToggleWishlist, onAddToCart, onView
                         >
                             <div className={styles.tabIconContainer}>
                                 <Heart className={styles.tabIcon} size={16} />
-                                <NotificationBadge count={wishlistIds.size} show={wishlistIds.size > 0} type="wishlist" />
+                                <NotificationBadge count={wishlist.size} show={wishlist.size > 0} type="wishlist" />
                             </div>
                             찜
                         </button>
