@@ -39,8 +39,9 @@ function Shop() {
     const wishlistLoading = useSelector(selectWishlistLoading);
     const wishlistError = useSelector(selectWishlistError);
     
-    // 임시 회원 ID (실제로는 로그인된 사용자 ID를 사용해야 함)
-    const [memberId, setMemberIdState] = useState(1);
+    // 로그인된 사용자 ID 가져오기
+    const auth = JSON.parse(localStorage.getItem('auth'));
+    const memberId = auth?.id || 1; // 로그인된 사용자 ID, 없으면 기본값 1
 
     /**
      * 컴포넌트 마운트 시 실행되는 useEffect
@@ -66,13 +67,19 @@ function Shop() {
      * 
      * @param {string} id - 찜할/제거할 향수의 ID
      */
-    const handleToggleWishlist = (id) => {
-        if (wishlistIds.has(id)) {
-            // 이미 찜한 항목이면 제거
-            dispatch(removeFromWishlistThunk(memberId, id));
-        } else {
-            // 찜하지 않은 항목이면 추가
-            dispatch(addToWishlistThunk(memberId, id));
+    const handleToggleWishlist = async (id) => {
+        try {
+            if (wishlistIds.has(id)) {
+                // 이미 찜한 항목이면 제거
+                await dispatch(removeFromWishlistThunk(memberId, id));
+            } else {
+                // 찜하지 않은 항목이면 추가
+                await dispatch(addToWishlistThunk(memberId, id));
+            }
+            // 상태 업데이트를 위해 찜 목록 다시 가져오기
+            dispatch(fetchWishlist(memberId));
+        } catch (error) {
+            console.error('찜하기 처리 중 오류:', error);
         }
     };
 
@@ -83,41 +90,48 @@ function Shop() {
      * 
      * @param {Object} perfume - 장바구니에 추가할 향수 객체
      */
-    const handleAddToCart = (perfume) => {
-        // 백엔드 API를 통해 장바구니에 추가
-        dispatch(addToCartThunk(memberId, perfume.id, 1));
-        
-        // 장바구니 아이콘에 애니메이션 효과 추가 (확대 후 원래 크기로)
-        // ShoppingTab 컴포넌트의 실제 클래스명 사용
-        const cartIcons = document.querySelectorAll('.shoppingBagIcon');
-        cartIcons.forEach(icon => {
-            icon.style.transform = 'scale(1.3)';
-            icon.style.transition = 'transform 0.3s ease';
-            setTimeout(() => {
-                icon.style.transform = 'scale(1)';
-            }, 300);
-        });
-        
-        // 장바구니 배지에 애니메이션 효과 추가 (확대 후 원래 크기로)
-        // NotificationBadge 컴포넌트의 실제 구조 사용
-        const cartBadges = document.querySelectorAll('[data-badge="cart"]');
-        cartBadges.forEach(badge => {
-            badge.style.transform = 'scale(1.2)';
-            badge.style.transition = 'transform 0.2s ease';
-            setTimeout(() => {
-                badge.style.transform = 'scale(1)';
-            }, 200);
-        });
-        
-        // 장바구니 탭 버튼에도 애니메이션 효과 추가
-        const cartTabButtons = document.querySelectorAll('[data-tab="cart"]');
-        cartTabButtons.forEach(button => {
-            button.style.transform = 'scale(1.05)';
-            button.style.transition = 'transform 0.2s ease';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 200);
-        });
+    const handleAddToCart = async (perfume) => {
+        try {
+            // 백엔드 API를 통해 장바구니에 추가
+            await dispatch(addToCartThunk(memberId, perfume.id, 1));
+            
+            // 상태 업데이트를 위해 장바구니 다시 가져오기
+            dispatch(fetchCart(memberId));
+            
+            // 장바구니 아이콘에 애니메이션 효과 추가 (확대 후 원래 크기로)
+            // ShoppingTab 컴포넌트의 실제 클래스명 사용
+            const cartIcons = document.querySelectorAll('.shoppingBagIcon');
+            cartIcons.forEach(icon => {
+                icon.style.transform = 'scale(1.3)';
+                icon.style.transition = 'transform 0.3s ease';
+                setTimeout(() => {
+                    icon.style.transform = 'scale(1)';
+                }, 300);
+            });
+            
+            // 장바구니 배지에 애니메이션 효과 추가 (확대 후 원래 크기로)
+            // NotificationBadge 컴포넌트의 실제 구조 사용
+            const cartBadges = document.querySelectorAll('[data-badge="cart"]');
+            cartBadges.forEach(badge => {
+                badge.style.transform = 'scale(1.2)';
+                badge.style.transition = 'transform 0.2s ease';
+                setTimeout(() => {
+                    badge.style.transform = 'scale(1)';
+                }, 200);
+            });
+            
+            // 장바구니 탭 버튼에도 애니메이션 효과 추가
+            const cartTabButtons = document.querySelectorAll('[data-tab="cart"]');
+            cartTabButtons.forEach(button => {
+                button.style.transform = 'scale(1.05)';
+                button.style.transition = 'transform 0.2s ease';
+                setTimeout(() => {
+                    button.style.transform = 'scale(1)';
+                }, 200);
+            });
+        } catch (error) {
+            console.error('장바구니 추가 중 오류:', error);
+        }
     };
 
     /**
