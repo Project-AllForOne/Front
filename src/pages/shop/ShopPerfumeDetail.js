@@ -16,6 +16,7 @@ import {
     fetchWishlist
 } from '../../module/WishlistModule'; // 찜 목록 관련 Redux 액션들과 셀렉터
 import { addToCartThunk, selectCartCount, fetchCart } from '../../module/CartModule'; // 장바구니 관련 Redux 액션들과 셀렉터
+import { createSubscriptionThunk } from '../../module/SubscriptionModule'; // 구독 관련 Redux 액션
 import { getPerfumeById } from '../../api/ShopAPICalls'; // 향수 상세 정보 API 호출 함수
 import '../../css/shop/PerfumeDetail.css'; // 향수 상세 페이지 스타일
 import styles from '../../css/shop/ShoppingTab.module.css'; // 쇼핑 탭 스타일 모듈
@@ -315,6 +316,40 @@ function ShopPerfumeDetail() {
     };
 
     /**
+     * ===== 구독하기 함수 =====
+     * 구독 상품을 구독하는 기능
+     */
+    const handleSubscribe = async () => {
+        // 로그인된 사용자가 없으면 로그인 페이지로 이동
+        if (!memberId) {
+            alert('로그인이 필요합니다.');
+            navigate('/login');
+            return;
+        }
+
+        try {
+            // Redux를 통해 구독 생성
+            const result = await dispatch(createSubscriptionThunk(memberId, perfume.id));
+            
+            if (result) {
+                alert('구독이 완료되었습니다!');
+                console.log('구독 성공:', result);
+            }
+        } catch (error) {
+            // 에러 메시지 정확히 추출
+            let errorMessage = '구독 중 오류가 발생했습니다.';
+            
+            if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            // 사용자에게 명확한 메시지 표시
+            alert(errorMessage);
+            console.error('구독 실패:', errorMessage);
+        }
+    };
+
+    /**
      * ===== 탭 클릭 함수 =====
      * 상단 네비게이션 탭을 클릭했을 때 해당 페이지로 이동합니다.
      */
@@ -508,17 +543,28 @@ function ShopPerfumeDetail() {
                                 <Heart className="action-icon" size={20} /> {/* 하트 아이콘 */}
                             </button>
 
-                            {/* ===== 장바구니 추가 버튼 ===== */}
-                            <button className="add-to-cart-btn" onClick={handleAddToCart}>
-                                <ShoppingBag className="action-icon" size={20} /> {/* 쇼핑백 아이콘 */}
-                                장바구니
-                            </button>
+                            {/* ===== 정기구독 테마일 때 구독하기 버튼, 아닐 때 장바구니/구매하기 버튼 ===== */}
+                            {perfume.theme === 'subscription' ? (
+                                /* ===== 구독하기 버튼 ===== */
+                                <button className="subscribe-btn" onClick={handleSubscribe}>
+                                    <CreditCard className="action-icon" size={20} /> {/* 신용카드 아이콘 */}
+                                    구독하기
+                                </button>
+                            ) : (
+                                <>
+                                    {/* ===== 장바구니 추가 버튼 ===== */}
+                                    <button className="add-to-cart-btn" onClick={handleAddToCart}>
+                                        <ShoppingBag className="action-icon" size={20} /> {/* 쇼핑백 아이콘 */}
+                                        장바구니
+                                    </button>
 
-                            {/* ===== 구매하기 버튼 ===== */}
-                            <button className="buy-now-btn" onClick={handleBuyNow}>
-                                <CreditCard className="action-icon" size={20} /> {/* 신용카드 아이콘 */}
-                                구매하기
-                            </button>
+                                    {/* ===== 구매하기 버튼 ===== */}
+                                    <button className="buy-now-btn" onClick={handleBuyNow}>
+                                        <CreditCard className="action-icon" size={20} /> {/* 신용카드 아이콘 */}
+                                        구매하기
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

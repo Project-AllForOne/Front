@@ -5,14 +5,12 @@ import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setMemberLeave } from '../../api/MemberAPICalls';
 import { logout } from '../../module/AuthModule';
-import MyReviewsPopover from '../sidebar/reviews/MyReviewsPopover';
 
 const Sidebar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false); // 회원탈퇴/로그아웃 메뉴 열림 상태
     const { isLoggedIn, user } = useSelector((state) => state.auth);
     const [localUser, setLocalUser] = useState(null);
-    const [showMyReviews, setShowMyReviews] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -120,7 +118,6 @@ const Sidebar = () => {
                         <a href="/history" className="sidebar-link">향기 히스토리</a>
                         <a href="/therapy" className="sidebar-link">향 테라피</a>
                         <a href="/shop" className="sidebar-link">쇼핑하기</a>
-                        <a href="/cart" className="sidebar-link">장바구니</a>
 
                         {/* 관리자 전용 링크 */}
                         {isAdmin && (
@@ -158,10 +155,13 @@ const Sidebar = () => {
                                     <div className="sidebar-menu">
                                         <button
                                             className="sidebar-auth-button"
-                                            onClick={() => setShowMyReviews(true)}
-                                            data-type="my-reviews"
+                                            onClick={() => {
+                                                navigate('/mypage');
+                                                setIsOpen(false);
+                                            }}
+                                            data-type="mypage"
                                         >
-                                            내가 작성한 리뷰
+                                            마이페이지
                                         </button>
                                         <button
                                             className="sidebar-auth-button"
@@ -188,18 +188,6 @@ const Sidebar = () => {
                     className="sidebar-overlay"
                     onClick={toggleSidebar}
                 />
-            )}
-
-            {showMyReviews && (
-                <div className="review-popover-container">
-                    <div
-                        onClick={() => setShowMyReviews(false)}
-                    />
-                    <MyReviewsPopover
-                        show={showMyReviews}
-                        onClose={() => setShowMyReviews(false)}
-                    />
-                </div>
             )}
 
         </>

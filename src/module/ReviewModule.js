@@ -143,23 +143,28 @@ export const deleteExistingReview = (reviewId, productId) => async (dispatch, ge
     try {
         dispatch(deleteReviewStart());
         
-        // 낙관적 업데이트
-        const currentReviews = selectReviews(getState());
-        const optimisticReviews = currentReviews.filter(review => review.id !== reviewId);
-        dispatch(deleteReviewSuccess(optimisticReviews));
-        
-        // API 호출
+        // API 호출 (삭제만)
         await deleteReview(reviewId);
         
-        // 실제 데이터로 업데이트
-        const productDetail = await getReviewsByProductId(productId);
-        const updatedReviews = productDetail || [];
-        
-        // 캐시 업데이트
-        sessionStorage.setItem(`reviews_${productId}`, JSON.stringify(updatedReviews));
-        dispatch(deleteReviewSuccess(updatedReviews));
+        // productId가 있을 때만 상품 리뷰 업데이트 (상품 상세 페이지용)
+        if (productId) {
+            const currentReviews = selectReviews(getState());
+            const optimisticReviews = currentReviews.filter(review => review.id !== reviewId);
+            dispatch(deleteReviewSuccess(optimisticReviews));
+            
+            const productDetail = await getReviewsByProductId(productId);
+            const updatedReviews = productDetail || [];
+            sessionStorage.setItem(`reviews_${productId}`, JSON.stringify(updatedReviews));
+            dispatch(deleteReviewSuccess(updatedReviews));
+        } else {
+            // productId 없으면 (마이페이지) 낙관적 업데이트만
+            const currentReviews = selectReviews(getState());
+            const optimisticReviews = currentReviews.filter(review => review.id !== reviewId);
+            dispatch(deleteReviewSuccess(optimisticReviews));
+        }
     } catch (error) {
         dispatch(deleteReviewFail(error.message || "리뷰 삭제 실패"));
+        throw error;  // 에러를 다시 던져서 handleDelete에서 처리
     }
 };
 

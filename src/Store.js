@@ -12,6 +12,7 @@ import bookmarkReducer from "./module/BookmarkModule";
 import reviewReducer from "./module/ReviewModule";
 import wishlistReducer from "./module/WishlistModule";
 import cartReducer from "./module/CartModule";
+import subscriptionReducer from "./module/SubscriptionModule";
 
 // 여러 리듀서를 합치는 경우
 const rootReducer = combineReducers({
@@ -26,7 +27,8 @@ const rootReducer = combineReducers({
     bookmark: bookmarkReducer,
     reviews: reviewReducer,
     wishlist: wishlistReducer,
-    cart: cartReducer
+    cart: cartReducer,
+    subscription: subscriptionReducer
 });
 
 // 스토어 생성
