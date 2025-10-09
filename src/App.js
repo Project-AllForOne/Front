@@ -30,6 +30,7 @@ import Shop from './pages/shop/Shop';
 import Wishlist from './pages/shop/Wishlist';
 import Cart from './pages/shop/Cart';
 import ShopPerfumeDetail from './pages/shop/ShopPerfumeDetail';
+import MyPage from './pages/mypage/MyPage';
 
 // 원래 로그인
 import LoginTest from "./pages/test/LoginTest";
@@ -97,6 +98,7 @@ function App() {
             <Route path='/wishlist' element={<Wishlist />} />
             <Route path='/cart' element={<Cart />} />
             <Route path='/perfume/:id' element={<ShopPerfumeDetail />} />
+            <Route path='/mypage' element={<MyPage />} />
           </Route>
 
 
